@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembar Riwayat & Monitor Jurnal</title>
+    <title>Lembar Riwayat & Monitor Laporan</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { background-color: #f8fafc; }
@@ -20,7 +20,7 @@
         
         <div class="mb-6 flex flex-wrap gap-3 justify-between items-center border-b border-slate-100 pb-4">
             <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">
-                ← Kembali Isi Jurnal Baru
+                ← Kembali Isi Laporan Baru
             </a>
             <div class="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold" id="role-badge">
                 Mode: Pengguna Umum
@@ -28,7 +28,7 @@
         </div>
 
         <div class="mb-8">
-            <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Riwayat & Pemantauan Jurnal Meditasi</h1>
+            <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Riwayat & Pemantauan Laporan Meditasi</h1>
             <p id="info-akses" class="text-sm text-slate-500 mt-1">Silakan masukkan nama Anda untuk melihat riwayat pribadi Anda.</p>
         </div>
 
@@ -36,7 +36,7 @@
             <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-2">
                 ✨ Jadwalkan PR / Target Batin Masa Depan (Otomatis Menempel)
             </h3>
-            <p class="text-xs text-amber-700 mb-3">Meskipun murid belum mengisi jurnal sampai tanggal tujuan, PR ini akan otomatis masuk saat mereka mulai menulis nanti.</p>
+            <p class="text-xs text-amber-700 mb-3">Meskipun murid belum mengisi Laporan sampai tanggal tujuan, PR ini akan otomatis masuk saat mereka mulai menulis nanti.</p>
             
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -65,7 +65,7 @@
 
         <div class="bg-slate-50 rounded-xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label for="search-nama" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Masukkan Nama Anda (Sesuai Jurnal)</label>
+                <label for="search-nama" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Masukkan Nama Anda (Sesuai Laporan)</label>
                 <input type="text" id="search-nama" oninput="renderTable()" placeholder="Ketik nama Anda di sini..." class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500">
             </div>
             <div>
@@ -141,7 +141,7 @@
                     infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Guru Aktif:</strong> Ketik/paste target langsung di kotak tabel (otomatis menyimpan), atau gunakan panel massal untuk range tanggal.";
                     bulkPanel.classList.remove('hidden');
                 } else {
-                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Editor Aktif:</strong> Memonitor data jurnal dan perkembangan spiritual.";
+                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Editor Aktif:</strong> Memonitor data Laporan dan perkembangan spiritual.";
                     bulkPanel.classList.add('hidden');
                 }
             }
@@ -171,7 +171,7 @@
             filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
             if(filteredData.length === 0) {
-                emptyState.innerText = "🚫 Tidak ditemukan data jurnal yang sesuai.";
+                emptyState.innerText = "🚫 Tidak ditemukan data Laporan yang sesuai.";
                 emptyState.classList.remove('hidden');
                 return;
             } else {
@@ -209,7 +209,7 @@
                             <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
                                 Koreksi
                             </button>
-                            <button onclick="hapusJurnal(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
+                            <button onclick="hapusLaporan(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
                                 Hapus 🗑️
                             </button>
                         </div>
@@ -251,13 +251,13 @@
             }
         }
 
-        function hapusJurnal(id, nama, tanggal) {
-            const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data jurnal milik "${nama}" pada tanggal ${tanggal}? Data yang dihapus tidak bisa dikembalikan.`);
+        function hapusLaporan(id, nama, tanggal) {
+            const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data Laporan milik "${nama}" pada tanggal ${tanggal}? Data yang dihapus tidak bisa dikembalikan.`);
             if (konfirmasi) {
                 let db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
                 db = db.filter(item => item.id !== id);
                 localStorage.setItem('meditasi_db', JSON.stringify(db));
-                alert("Jurnal sukses dihapus!");
+                alert("Laporan sukses dihapus!");
                 renderTable();
             }
         }
@@ -291,7 +291,7 @@
             localStorage.setItem('target_db', JSON.stringify(targetDb));
 
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            let terupdateJurnalLama = 0;
+            let terupdateLaporanLama = 0;
 
             db.forEach(item => {
                 const itemNama = (item.nama || '').toLowerCase().trim();
@@ -299,13 +299,13 @@
                     const itemTanggal = new Date(item.tanggal);
                     if(itemTanggal >= new Date(tglMulaiStr) && itemTanggal <= new Date(tglSelesaiStr)) {
                         item.pr_individu = teksPR;
-                        terupdateJurnalLama++;
+                        terupdateLaporanLama++;
                     }
                 }
             });
             localStorage.setItem('meditasi_db', JSON.stringify(db));
 
-            alert(`Sukses! Target batin untuk "${namaTarget}" berhasil dikunci dari tanggal ${tglMulaiStr} s/d ${tglSelesaiStr}.\n\n(Mengubah ${terupdateJurnalLama} jurnal lama & siap terpasang otomatis untuk jurnal masa depan)`);
+            alert(`Sukses! Target batin untuk "${namaTarget}" berhasil dikunci dari tanggal ${tglMulaiStr} s/d ${tglSelesaiStr}.\n\n(Mengubah ${terupdateLaporanLama} Laporan lama & siap terpasang otomatis untuk Laporan masa depan)`);
             document.getElementById('bulk-teks-pr').value = "";
             renderTable();
         }
