@@ -134,7 +134,7 @@
 
             <div class="pt-2">
                 <button type="submit" id="btn-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer">
-                    Simpan Jurnal Meditasi
+                    Simpan Laporan Meditasi
                 </button>
             </div>
         </form>
@@ -181,13 +181,13 @@
                 statusBlock.classList.add('hidden');
                 roleIndicator.innerText = "Mode: Pengguna Umum";
                 roleIndicator.className = "mt-2 text-xs sm:text-sm text-emerald-600 font-medium";
-                btnSubmit.innerText = "Simpan Jurnal Meditasi";
+                btnSubmit.innerText = "Simpan Laporan Meditasi";
             } else {
                 formBlock.classList.add('hidden');
                 statusBlock.classList.remove('hidden');
                 displayName.innerText = role === 'SukWan' ? "Ci Suk Wan" : "Ci Titin";
                 roleIndicator.innerText = `Mode: ${role}`;
-                btnSubmit.innerText = "Simpan Perubahan Jurnal";
+                btnSubmit.innerText = "Simpan Perubahan Laporan";
             }
         }
 
@@ -233,7 +233,7 @@
                 localStorage.setItem('meditasi_db', JSON.stringify(db));
                 this.reset();
                 document.getElementById('tanggal').valueAsDate = new Date();
-                showToast("Jurnal berhasil disimpan!");
+                showToast("Laporan berhasil disimpan!");
             }
         });
 
