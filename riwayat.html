@@ -93,17 +93,17 @@
                         <tr class="bg-slate-900 text-white text-xs uppercase tracking-wider font-semibold">
                             <th class="p-4 whitespace-nowrap">Tanggal</th>
                             <th class="p-4 whitespace-nowrap">Nama</th>
-                            <th class="p-4 whitespace-nowrap text-center">Ikut Sesi</th>
-                            <th class="p-4 min-w-[100px]">Duduk</th>
-                            <th class="p-4 min-w-[100px]">Jalan</th>
-                            <th class="p-4 min-w-[120px]">Wandering</th>
-                            <th class="p-4 min-w-[120px]">Kembali Cepat</th>
-                            <th class="p-4 min-w-[90px]">Hold</th>
-                            <th class="p-4 min-w-[90px]">Halus</th>
-                            <th class="p-4 min-w-[100px]">Cahaya</th>
+                            <th class="p-4 whitespace-nowrap text-center">Ikut Meditasi</th>
+                            <th class="p-4 min-w-[100px]">Meditasi Jalan</th>
+                            <th class="p-4 min-w-[100px]">Meditasi Duduk</th>
+                            <th class="p-4 min-w-[120px]">Wandering Mind</th>
+                            <th class="p-4 min-w-[120px]">Cepat Dapat Konsentrasi</th>
+                            <th class="p-4 min-w-[90px]">Fokus Pegang Nafas</th>
+                            <th class="p-4 min-w-[90px]">Nafas Halus</th>
+                            <th class="p-4 min-w-[100px]">Muncul Cahaya</th>
                             <th class="p-4 min-w-[180px]">Pengalaman Batin</th>
-                            <th class="p-4 min-w-[180px] bg-indigo-950 text-indigo-100">Review Sesi Sharing</th>
-                            <th class="p-4 min-w-[220px] bg-amber-950 text-amber-100">PR/Target Individu</th>
+                            <th class="p-4 min-w-[180px] bg-indigo-950 text-indigo-100">Review saat Sesi Sharing</th>
+                            <th class="p-4 min-w-[220px] bg-amber-950 text-amber-100">PR/Target Individu (Ci Suk Wan yg Isi)</th>
                             <th class="p-4 text-center sticky right-0 bg-slate-900 z-10 min-w-[150px] id-kolom-aksi">Aksi</th>
                         </tr>
                     </thead>
@@ -213,7 +213,7 @@
                     kolomPRDinamis = `<span class="text-xs font-medium text-amber-950">${item.pr_individu || '<em class="text-slate-400">Belum ada feedback target...</em>'}</span>`;
                 }
 
-                // TOMBOL AKSI BERDAMPINGAN (User Maupun Admin Bisa Edit & Hapus)
+                // TOMBOL AKSI BERDAMPINGAN (Semua bisa Edit & Hapus)
                 let tombolAksiKonten = "";
                 if(role === 'User') {
                     tombolAksiKonten = `
@@ -239,12 +239,13 @@
                     `;
                 }
 
+                // PEMETAAN KOLOM DATA SESUAI DENGAN SUSUNAN HEADER TABEL YANG BARU
                 tr.innerHTML = `
                     <td class="p-4 font-medium whitespace-nowrap text-slate-900">${formatTanggal(item.tanggal)}</td>
                     <td class="p-4 font-semibold text-slate-800">${item.nama || '-'}</td>
                     <td class="p-4 text-center">${badgeSesi}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.durasi_duduk || '-'}</td>
                     <td class="p-4 whitespace-pre-line text-xs">${item.durasi_jalan || '-'}</td>
+                    <td class="p-4 whitespace-pre-line text-xs">${item.durasi_duduk || '-'}</td>
                     <td class="p-4 whitespace-pre-line text-xs">${item.frekuensi_wandering || '-'}</td>
                     <td class="p-4 whitespace-pre-line text-xs">${item.kembali_cepat || '-'}</td>
                     <td class="p-4 whitespace-pre-line text-xs">${item.durasi_hold || '-'}</td>
@@ -263,7 +264,6 @@
             });
         }
 
-        // FUNGSI: Simpan Otomatis Setiap Ketikan Baru dari Ci Suk Wan
         function simpanPRLangsungOtomatis(id) {
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
             const inputTeks = document.getElementById(`live-pr-${id}`).value;
@@ -274,7 +274,6 @@
             }
         }
 
-        // FUNGSI: Hapus Jurnal dengan Pengaman Verifikasi Nama untuk User Biasa
         function hapusJurnal(id, nama, tanggal) {
             const role = getRole();
             let izinkanHapus = false;
@@ -300,7 +299,6 @@
             }
         }
 
-        // FUNGSI: Download File PDF Menggunakan html2pdf
         function downloadPDFRiwayat() {
             const queryNama = document.getElementById('search-nama').value.trim() || "Semua_Murid";
             
@@ -309,7 +307,6 @@
             textareas.forEach(t => t.style.display = 'none');
             printTexts.forEach(p => p.style.display = 'block');
 
-            // Sembunyikan kolom Aksi agar PDF bersih
             document.querySelectorAll('.id-kolom-aksi, .id-kolom-aksi-isi').forEach(el => el.style.display = 'none');
 
             const element = document.getElementById('area-cetak-pdf');
@@ -322,7 +319,6 @@
             };
 
             html2pdf().set(opsi).from(element).save().then(() => {
-                // Tampilkan kembali elemen input setelah unduhan selesai
                 textareas.forEach(t => t.style.display = 'block');
                 printTexts.forEach(p => p.style.display = 'none');
                 document.querySelectorAll('.id-kolom-aksi, .id-kolom-aksi-isi').forEach(el => el.style.display = '');
@@ -372,7 +368,7 @@
             });
             localStorage.setItem('meditasi_db', JSON.stringify(db));
 
-            alert(`Sukses! Target batin untuk "${namaTarget}" berhasil dikunci.`);
+            alert(`Sukses mengunci target batin untuk "${namaTarget}"!`);
             document.getElementById('bulk-teks-pr').value = "";
             renderTable();
         }
