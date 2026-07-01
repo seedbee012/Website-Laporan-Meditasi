@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riwayat Jurnal Meditasi</title>
+    <!-- Script Tailwind & html2pdf -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
@@ -17,16 +18,19 @@
 
     <div class="max-w-[98%] mx-auto space-y-6">
         
+        <!-- NAVIGASI ATAS -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex justify-between items-center no-print">
             <a href="index.html" class="text-sm font-semibold text-slate-600 hover:text-slate-950">← Kembali Isi Jurnal</a>
             <a href="absensi.html" class="text-sm font-semibold text-indigo-600 hover:text-indigo-900">Lihat Matriks Absensi →</a>
         </div>
 
+        <!-- PANEL PENYELAMAT DATA (PINDAH DATA DARI HP TEMAN KE LAPTOP KAMU) -->
         <div class="bg-indigo-900 text-white rounded-2xl p-6 shadow-md no-print">
             <h2 class="text-lg font-bold flex items-center gap-2">🔄 Fitur Pindah Data Jarak Jauh (Online)</h2>
             <p class="text-xs text-indigo-200 mt-1">Gunakan panel ini untuk memindahkan data dari HP teman-teman ke laptop kamu via WhatsApp.</p>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-indigo-800">
+                <!-- SISI MURID (DI HP) -->
                 <div class="space-y-2 border-b md:border-b-0 md:border-r border-indigo-800 pb-4 md:pb-0 md:pr-4">
                     <h3 class="text-xs font-bold text-cyan-300 uppercase tracking-wider">🙋‍♂️ UNTUK MURID (Di HP Mereka):</h3>
                     <p class="text-xs text-indigo-200">Buka halaman ini di HP, klik tombol di bawah, lalu langsung Tempel (*Paste*) kodenya ke chat WhatsApp Ci Titin / Ci Suk Wan.</p>
@@ -35,6 +39,7 @@
                     </button>
                 </div>
 
+                <!-- SISI KAMU (DI LAPTOP) -->
                 <div class="space-y-2">
                     <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">👩‍💻 UNTUK KAMU (Di Laptop):</h3>
                     <p class="text-xs text-indigo-200">Salin kode tulisan panjang yang dikirim temanmu dari WhatsApp, tempel ke kotak di bawah ini, lalu klik Gabungkan.</p>
@@ -48,6 +53,7 @@
             </div>
         </div>
 
+        <!-- PANEL FILTER PENCARIAN -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-wrap items-center justify-between gap-4 no-print">
             <div class="w-full sm:w-72">
                 <label for="search-nama" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Cari Nama Murid</label>
@@ -58,6 +64,7 @@
             </button>
         </div>
 
+        <!-- AREA CETAK LAPORAN REKAP JURNAL LENGKAP -->
         <div id="area-cetak-riwayat" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 overflow-x-auto">
             <div class="mb-4 text-center border-b pb-3 border-slate-200">
                 <h2 class="text-lg font-bold text-slate-900 uppercase">Laporan Riwayat Jurnal Meditasi Murid</h2>
@@ -84,7 +91,8 @@
                     </tr>
                 </thead>
                 <tbody id="riwayat-table-body" class="divide-y divide-slate-200 text-slate-700 bg-white">
-                    </tbody>
+                    <!-- Data otomatis muncul di sini -->
+                </tbody>
             </table>
         </div>
 
@@ -111,7 +119,7 @@
             });
         }
 
-        // --- 2. FUNGSI SISI GUR/EDITOR (DI LAPTOP) ---
+        // --- 2. FUNGSI SISI GURU/EDITOR (DI LAPTOP) ---
         function gabungDataDiLaptop() {
             const inputTxt = document.getElementById('input-kode-murid').value.trim();
             if (!inputTxt) {
@@ -138,7 +146,7 @@
                 });
 
                 localStorage.setItem('meditasi_db', JSON.stringify(dbLokal));
-                alert(`🎉 Sukses! Berhasil menyatukan ${dataMasukCounter} data jurnal baru ke laptop kamu.`);
+                alert("🎉 Sukses! Berhasil menyatukan data jurnal baru ke laptop kamu.");
                 
                 document.getElementById('input-kode-murid').value = ""; 
                 renderRiwayatTabel(); 
@@ -162,20 +170,23 @@
             }
         }
 
-        // --- 4. TAMPILAN RENDERING TABEL SESUAI REKUES KAMU ---
+        // --- 4. TAMPILAN RENDERING TABEL (LANGSUNG MUNCUL TANPA FILTER FILTER KOSONG) ---
         function renderRiwayatTabel() {
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
             const tbody = document.getElementById('riwayat-table-body');
             const keyword = document.getElementById('search-nama').value.toLowerCase().trim();
-            const role = localStorage.getItem('currentUserRole') || 'User';
             
             tbody.innerHTML = '';
             db.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
-            const filtered = db.filter(item => (item.nama || '').toLowerCase().includes(keyword));
+            // Perbaikan logika filter: Jika keyword kosong, langsung loloskan (tampilkan semua)
+            const filtered = db.filter(item => {
+                if (keyword === "") return true;
+                return (item.nama || '').toLowerCase().includes(keyword);
+            });
 
             if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="14" class="p-4 text-center text-slate-400 font-medium">Belum ada data jurnal ditemukan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="14" class="p-4 text-center text-slate-400 font-medium">Belum ada data jurnal ditemukan. Pastikan sudah memasukkan kode gabungan data dari WhatsApp.</td></tr>`;
                 return;
             }
 
@@ -188,7 +199,7 @@
                     ? `<span class="bg-cyan-100 text-cyan-900 font-bold px-2 py-0.5 rounded-sm text-[10px]">Yes</span>` 
                     : `<span class="text-slate-400 font-normal">No</span>`;
 
-                // Tampilan Kolom Berurutan Sesuai Format Rekues
+                // Tampilan Kolom Berurutan Sesuai Format Rekues Persis
                 tr.innerHTML = `
                     <td class="p-2.5 font-medium whitespace-nowrap">${formatTanggal(item.tanggal)}</td>
                     <td class="p-2.5 font-bold text-slate-900 whitespace-nowrap">${item.nama || '-'}</td>
