@@ -145,132 +145,180 @@
         <div id="toast-text" class="text-sm font-medium">Aksi Berhasil!</div>
     </div>
 
-    <script>
-        let editingId = null;
-        document.getElementById('tanggal').valueAsDate = new Date();
+<script>
+        // Set default tanggal hari ini
+        document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
 
-        function handleLogin() {
-            const email = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-password').value;
-            if(email === 'sukwan@meditasi.com' && pass === 'sukwan123') {
-                localStorage.setItem('currentUserRole', 'SukWan');
-                showToast("Selamat datang Ci Suk Wan!");
-            } else if(email === 'titin@meditasi.com' && pass === 'titin123') {
-                localStorage.setItem('currentUserRole', 'Titin');
-                showToast("Selamat datang Ci Titin!");
-            } else { showToast("Email atau Password salah!"); return; }
-            applyRoleSecurity();
-        }
-
-        function handleLogout() {
-            localStorage.setItem('currentUserRole', 'User');
-            showToast("Anda telah keluar.");
-            applyRoleSecurity();
-        }
-
-        function applyRoleSecurity() {
+        function checkLoginState() {
             const role = localStorage.getItem('currentUserRole') || 'User';
-            const formBlock = document.getElementById('login-form-block');
-            const statusBlock = document.getElementById('login-status-block');
-            const displayName = document.getElementById('user-display-name');
-            const roleIndicator = document.getElementById('role-indicator');
-            const btnSubmit = document.getElementById('btn-submit');
+            const loginArea = document.getElementById('login-area');
+            const logoutArea = document.getElementById('logout-area');
+            const txtStatus = document.getElementById('admin-status-text');
+            const boxReview = document.getElementById('box-review-sharing');
 
             if(role === 'User') {
-                formBlock.classList.remove('hidden');
-                statusBlock.classList.add('hidden');
-                roleIndicator.innerText = "Mode: Pengguna Umum";
-                roleIndicator.className = "mt-2 text-xs sm:text-sm text-emerald-600 font-medium";
-                btnSubmit.innerText = "Simpan Laporan Meditasi";
+                loginArea.classList.remove('hidden');
+                logoutArea.classList.add('hidden');
+                boxReview.classList.add('hidden');
             } else {
-                formBlock.classList.add('hidden');
-                statusBlock.classList.remove('hidden');
-                displayName.innerText = role === 'SukWan' ? "Ci Suk Wan" : "Ci Titin";
-                roleIndicator.innerText = `Mode: ${role}`;
-                btnSubmit.innerText = "Simpan Perubahan Laporan";
+                loginArea.classList.add('hidden');
+                logoutArea.classList.remove('hidden');
+                boxReview.classList.remove('hidden');
+                txtStatus.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
             }
         }
 
-        document.getElementById('meditationForm').addEventListener('submit', function(e) {
+        function prosesLogin() {
+            const email = document.getElementById('admin-email').value.trim();
+            const pass = document.getElementById('admin-pass').value;
+
+            if(email === 'sukwan@meditasi.com' && pass === 'sukwan123') {
+                localStorage.setItem('currentUserRole', 'SukWan');
+                alert("Selamat datang Ci Suk Wan! Mode Guru aktif.");
+            } else if(email === 'titin@meditasi.com' && pass === 'titin123') {
+                localStorage.setItem('currentUserRole', 'Titin');
+                alert("Selamat datang Ci Titin! Mode Editor aktif.");
+            } else {
+                alert("Email atau password admin salah!");
+                return;
+            }
+            document.getElementById('admin-email').value = '';
+            document.getElementById('admin-pass').value = '';
+            checkLoginState();
+        }
+
+        function prosesLogout() {
+            localStorage.setItem('currentUserRole', 'User');
+            alert("Keluar dari Mode Admin. Sekarang dalam Mode Pengguna Umum.");
+            checkLoginState();
+        }
+
+        // ================================================================
+        // PERBAIKAN UTAMA: CEK TARGET SECARA IGNORE CASE (HURUF BESAR / KECIL)
+        // ================================================================
+        function cekTargetOtomatis() {
+            const namaInput = document.getElementById('input-nama').value.trim().toLowerCase(); // Jadikan huruf kecil semua
+            const tglInput = document.getElementById('input-tanggal').value;
+            const targetDb = JSON.parse(localStorage.getItem('target_db')) || [];
+            
+            const boxPR = document.getElementById('box-pr-otomatis');
+            const teksPR = document.getElementById('teks-pr-otomatis');
+
+            if(!namaInput || !tglInput) {
+                boxPR.classList.add('hidden');
+                return;
+            }
+
+            // Mencocokkan nama dengan mengubah pembandingnya ke .toLowerCase() juga
+            const found = targetDb.find(t => t.nama.trim().toLowerCase() === namaInput && t.tanggal === tglInput);
+
+            if(found && found.pr_individual || (found && found.pr_individu)) {
+                teksPR.innerText = found.pr_individu || found.pr_individual;
+                boxPR.classList.remove('hidden');
+            } else {
+                boxPR.classList.add('hidden');
+            }
+        }
+
+        function dapatkanParameterUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('editId');
+            if(editId) {
+                siapkanModeEdit(parseInt(editId));
+            }
+        }
+
+        function siapkanModeEdit(id) {
+            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            const data = db.find(item => item.id === id);
+            if(!data) return;
+
+            document.getElementById('form-title').innerText = "📝 Mode Koreksi / Edit Jurnal Meditasi";
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('input-nama').value = data.nama || '';
+            document.getElementById('input-tanggal').value = data.tanggal || '';
+            
+            const radios = document.getElementsByName('ikut_sesi');
+            for(let r of radios) {
+                if(r.value === data.ikut_sesi) r.checked = true;
+            }
+
+            document.getElementById('duduk').value = data.durasi_duduk || '';
+            document.getElementById('jalan').value = data.durasi_jalan || '';
+            document.getElementById('wandering').value = data.frekuensi_wandering || '';
+            document.getElementById('kembali').value = data.kembali_cepat || '';
+            document.getElementById('hold').value = data.durasi_hold || '';
+            document.getElementById('halus').value = data.durasi_halus || '';
+            document.getElementById('cahaya').value = data.muncul_cahaya || '';
+            document.getElementById('pengalaman').value = data.pengalaman || '';
+            document.getElementById('review-sharing').value = data.review_sharing || '';
+
+            cekTargetOtomatis();
+        }
+
+        function simpanJurnal(e) {
             e.preventDefault();
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            
-            // Mengambil data lama agar data `pr_individu` tidak hilang saat di-update dari index.html
-            let existingPr = "";
-            if (editingId) {
-                const oldItem = db.find(i => i.id === editingId);
-                if (oldItem && oldItem.pr_individu) {
-                    existingPr = oldItem.pr_individu;
+            const editId = document.getElementById('edit-id').value;
+
+            const nama = document.getElementById('input-nama').value.trim();
+            const tanggal = document.getElementById('input-tanggal').value;
+            const ikut_sesi = document.querySelector('input[name="ikut_sesi"]:checked').value;
+            const durasi_duduk = document.getElementById('duduk').value;
+            const durasi_jalan = document.getElementById('jalan').value;
+            const frekuensi_wandering = document.getElementById('wandering').value;
+            const kembali_cepat = document.getElementById('kembali').value;
+            const durasi_hold = document.getElementById('hold').value;
+            const durasi_halus = document.getElementById('halus').value;
+            const muncul_cahaya = document.getElementById('cahaya').value;
+            const pengalaman = document.getElementById('pengalaman').value;
+            const review_sharing = document.getElementById('review-sharing').value;
+
+            // Ambil text PR otomatis jika ada saat ini
+            const targetDb = JSON.parse(localStorage.getItem('target_db')) || [];
+            const foundTarget = targetDb.find(t => t.nama.toLowerCase() === nama.toLowerCase() && t.tanggal === tanggal);
+            const pr_individu = foundTarget ? (foundTarget.pr_individu || foundTarget.pr_individual) : "";
+
+            if(editId) {
+                // UPDATE DATA LAMA
+                const idx = db.findIndex(item => item.id === parseInt(editId));
+                if(idx !== -1) {
+                    db[idx] = { 
+                        ...db[idx], nama, tanggal, ikut_sesi, durasi_duduk, durasi_jalan, 
+                        frekuensi_wandering, kembali_cepat, durasi_hold, durasi_halus, 
+                        muncul_cahaya, pengalaman, review_sharing,
+                        pr_individu: pr_individu || db[idx].pr_individu || ""
+                    };
+                    alert("Jurnal Berhasil Diperbarui / Dikoreksi!");
                 }
-            }
-
-            const formData = {
-                id: editingId || Date.now(),
-                tanggal: document.getElementById('tanggal').value,
-                nama: document.getElementById('nama').value,
-                ikut_sesi: document.querySelector('input[name="ikut_sesi"]:checked').value,
-                durasi_jalan: document.getElementById('durasi_jalan').value,
-                durasi_duduk: document.getElementById('durasi_duduk').value,
-                frekuensi_wandering: document.getElementById('frekuensi_wandering').value,
-                kembali_cepat: document.getElementById('kembali_cepat').value,
-                durasi_hold: document.getElementById('durasi_hold').value,
-                durasi_halus: document.getElementById('durasi_halus').value,
-                muncul_cahaya: document.getElementById('muncul_cahaya').value,
-                pengalaman: document.getElementById('pengalaman').value,
-                review_sharing: document.getElementById('review_sharing').value,
-                pr_individu: existingPr // Mempertahankan data PR yang diatur oleh Ci Suk Wan di riwayat
-            };
-
-            if (editingId) {
-                const idx = db.findIndex(i => i.id === editingId);
-                if (idx !== -1) db[idx] = formData;
-                editingId = null;
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                alert("Berhasil disimpan! Mengembalikan ke Riwayat.");
-                window.location.href = 'riwayat.html';
             } else {
-                db.push(formData);
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                this.reset();
-                document.getElementById('tanggal').valueAsDate = new Date();
-                showToast("Laporan berhasil disimpan!");
+                // BUAT DATA JURNAL BARU
+                const jurnalBaru = {
+                    id: Date.now(), nama, tanggal, ikut_sesi, durasi_duduk, durasi_jalan,
+                    frekuensi_wandering, kembali_cepat, durasi_hold, durasi_halus,
+                    muncul_cahaya, pengalaman, review_sharing, pr_individu
+                };
+                db.push(jurnalBaru);
+                alert("Jurnal Sukses Terkirim & Tersimpan!");
             }
+
+            localStorage.setItem('meditasi_db', JSON.stringify(db));
+            
+            // Redirect jika setelah edit, atau reset form jika entri baru
+            if(editId) {
+                window.location.href = "riwayat.html";
+            } else {
+                document.getElementById('jurnal-form').reset();
+                document.getElementById('edit-id').value = "";
+                document.getElementById('box-pr-otomatis').classList.add('hidden');
+                document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            checkLoginState();
+            dapatkanParameterUrl();
         });
-
-        function checkForIncomingEdit() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const editId = urlParams.get('editId');
-            if (editId) {
-                const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-                const item = db.find(i => i.id == editId);
-                if (item) {
-                    editingId = parseInt(editId);
-                    document.getElementById('tanggal').value = item.tanggal;
-                    document.getElementById('nama').value = item.nama;
-                    document.querySelector(`input[name="ikut_sesi"][value="${item.ikut_sesi}"]`).checked = true;
-                    document.getElementById('durasi_jalan').value = item.durasi_jalan;
-                    document.getElementById('durasi_duduk').value = item.durasi_duduk;
-                    document.getElementById('frekuensi_wandering').value = item.frekuensi_wandering;
-                    document.getElementById('kembali_cepat').value = item.kembali_cepat;
-                    document.getElementById('durasi_hold').value = item.durasi_hold;
-                    document.getElementById('durasi_halus').value = item.durasi_halus;
-                    document.getElementById('muncul_cahaya').value = item.muncul_cahaya || '';
-                    document.getElementById('pengalaman').value = item.pengalaman;
-                    document.getElementById('review_sharing').value = item.review_sharing || '';
-                    document.getElementById('review_sharing').focus();
-                }
-            }
-        }
-
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-text').innerText = m;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
-        applyRoleSecurity();
-        checkForIncomingEdit();
     </script>
 </body>
 </html>
