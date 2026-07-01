@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matriks Absensi Harian Per Bulan</title>
+    <title>Matriks Absensi Juli 2026</title>
     <!-- Script Tailwind & html2pdf -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
-        /* Pembungkus agar tabel matriks tanggal bisa di-scroll ke kanan dengan lancar */
         .table-container {
-            max-height: 70vh;
-            overflow: auto;
+            max-height: 75vh;
+            overflow-x: auto;
+            overflow-y: auto;
         }
-        /* Mengunci kolom No dan Nama di sebelah kiri agar tidak ikut tergeser saat scroll */
+        /* Mengunci kolom nomor dan nama di sebelah kiri agar tidak ikut tergeser saat scroll kanan */
         .sticky-col-no {
             position: sticky;
             left: 0;
@@ -46,34 +46,25 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen py-6 px-4">
 
-    <div class="max-w-[98%] mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6">
+    <div class="max-w-[99%] mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6">
         
-        <!-- NAVIGASI UTAS -->
+        <!-- NAVIGASI ATAS -->
         <div class="mb-6 flex flex-wrap gap-3 justify-between items-center border-b border-slate-100 pb-4 no-print">
             <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">
                 ← Kembali ke Isi Jurnal
             </a>
-            <div class="flex items-center gap-2">
-                <!-- PILIHAN BULAN UTAMA -->
-                <label for="pilih-bulan" class="text-xs font-bold text-slate-500 uppercase">Tampilkan Bulan:</label>
-                <select id="pilih-bulan" onchange="renderMatriksHarian()" class="bg-slate-100 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold outline-none focus:border-indigo-500 cursor-pointer">
-                    <option value="6">Juli 2026</option>
-                    <option value="7">Agustus 2026</option>
-                    <option value="8">September 2026</option>
-                    <option value="9">Oktober 2026</option>
-                    <option value="10">November 2026</option>
-                    <option value="11">Desember 2026</option>
-                </select>
-            </div>
+            <a href="riwayat.html" class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-900 text-sm font-semibold transition-colors">
+                🔄 Gabungkan Data WA / Lihat Riwayat →
+            </a>
             <button onclick="downloadMatriksPDF()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer">
-                Unduh PDF Bulan Ini 📄
+                Unduh PDF Absensi Juli 📄
             </button>
         </div>
 
         <!-- HEADER MATRIKS -->
         <div class="mb-4 text-center">
-            <h1 id="judul-matriks" class="text-xl font-bold text-slate-900 uppercase tracking-tight">Matriks Laporan Kehadiran Harian</h1>
-            <p class="text-xs text-slate-500 mt-1">Format horizontal tanggal harian berjejer ke kanan. Tampilan otomatis mendeteksi status "Yes" murid.</p>
+            <h1 class="text-xl font-bold text-slate-900 uppercase tracking-tight">Matriks Absensi Jurnal (1 Juli - 31 Juli 2026)</h1>
+            <p class="text-xs text-slate-500 mt-1">Geser tabel ke kanan untuk melihat deretan tanggal dari 1/7/2026 sampai 31/7/2026.</p>
         </div>
 
         <!-- AREA CETAK MATRIKS -->
@@ -83,12 +74,12 @@
                     <thead>
                         <tr id="header-row-matriks" class="bg-slate-900 text-white font-semibold text-center divide-x divide-slate-700">
                             <th class="p-2 text-left sticky-header-no min-w-[35px]">No</th>
-                            <th class="p-2 text-left sticky-header-nama min-w-[140px]">Nama</th>
-                            <!-- Kolom tanggal harian 1, 2, 3... akan masuk ke sini via Javascript -->
+                            <th class="p-2 text-left sticky-header-nama min-w-[140px]">Nama Murid</th>
+                            <!-- Kolom tanggal 1/7/2026 s/d 31/7/2026 otomatis di-generate ke kanan oleh script -->
                         </tr>
                     </thead>
                     <tbody id="matriks-harian-body" class="divide-y divide-slate-200 bg-white">
-                        <!-- Data Baris Murid dimasukkan otomatis lewat JavaScript -->
+                        <!-- Baris nama murid otomatis muncul di sini -->
                     </tbody>
                 </table>
             </div>
@@ -97,7 +88,7 @@
     </div>
 
     <script>
-        // Daftar nama murid fix sesuai urutan database Anda
+        // Daftar nama sesuai data absensi kelas Anda
         const daftarMurid = [
             "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", 
             "Limey", "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", 
@@ -106,40 +97,21 @@
             "Adi", "Neneng", "Suryani"
         ];
 
-        // Nama bulan untuk judul laporan
-        const namaBulanIndo = [
-            "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-        ];
-
-        function renderMatriksHarian() {
+        function renderMatriksJuli() {
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            
-            // Ambil bulan pilihan (Juli = 6, Agustus = 7, dst.)
-            const bulanDipilih = parseInt(document.getElementById('pilih-bulan').value);
             const tahunTarget = 2026;
+            const jumlahHariJuli = 31; // Dikunci 31 hari untuk Juli
 
-            // Update Judul Halaman secara Real-time
-            document.getElementById('judul-matriks').innerText = `Matriks Kehadiran Bulan ${namaBulanIndo[bulanDipilih]} ${tahunTarget}`;
-
-            // Hitung jumlah hari dalam bulan tersebut (misal: Juli = 31, November = 30)
-            const jumlahHari = new Date(tahunTarget, bulanDipilih + 1, 0).getDate();
-
-            // 1. GENERATE HEADER TANGGAL KE SAMPING (1/7/2026, 2/7/2026, dst.)
+            // 1. GENERATE HEADER TANGGAL KANAN (1/7/2026 sampai 31/7/2026)
             const headerRow = document.getElementById('header-row-matriks');
-            // Hapus kolom tanggal lama jika ada sebelum diganti bulan baru
-            const kolomLama = headerRow.querySelectorAll('.kolom-tgl-dinamis');
-            kolomLama.forEach(k => k.remove());
-
-            for (let hari = 1; hari <= jumlahHari; hari++) {
+            for (let hari = 1; hari <= jumlahHariJuli; hari++) {
                 const th = document.createElement('th');
-                th.className = "p-1.5 text-center min-w-[50px] bg-slate-900 text-white kolom-tgl-dinamis border-l border-slate-700 font-mono font-medium";
-                // Format teks header sesuai permintaan: d/m/yyyy
-                th.innerText = `${hari}/${bulanDipilih + 1}/${tahunTarget}`;
+                th.className = "p-1.5 text-center min-w-[65px] bg-slate-900 text-white border-l border-slate-700 font-mono font-medium";
+                th.innerText = `${hari}/7/${tahunTarget}`; // Tampilan tanggal yang Anda minta
                 headerRow.appendChild(th);
             }
 
-            // 2. GENERATE BARIS MURID KE BAWAH + CEK ABSENSI
+            // 2. GENERATE BARIS MURID KE BAWAH
             const tbody = document.getElementById('matriks-harian-body');
             tbody.innerHTML = '';
 
@@ -159,18 +131,16 @@
                 tdNama.innerText = nama;
                 tr.appendChild(tdNama);
 
-                // Buat kotak status per tanggal ke samping harian
-                for (let hari = 1; hari <= jumlahHari; hari++) {
+                // Isi status Yes/No untuk masing-masing tanggal ke samping
+                for (let hari = 1; hari <= jumlahHariJuli; hari++) {
                     const tdStatus = document.createElement('td');
                     tdStatus.className = "p-2 text-center font-bold text-[10px]";
 
-                    // Samakan format string tanggal untuk dicocokkan ke database (YYYY-MM-DD)
-                    // contoh: 2026-07-01
-                    const formatBulanStr = String(bulanDipilih + 1).padStart(2, '0');
+                    // Format string tanggal database: YYYY-MM-DD (2026-07-01)
                     const formatHariStr = String(hari).padStart(2, '0');
-                    const stringTanggalTarget = `${tahunTarget}-${formatBulanStr}-${formatHariStr}`;
+                    const stringTanggalTarget = `${tahunTarget}-07-${formatHariStr}`;
 
-                    // Cari di database apakah murid ini mengisi jurnal "Ya/Yes" pada tanggal tersebut
+                    // Pencocokan data nama dan tanggal di localStorage laptop
                     const matchData = db.find(item => {
                         const dbNama = (item.nama || '').toLowerCase().trim();
                         const targetNama = nama.toLowerCase().trim();
@@ -181,13 +151,13 @@
                         const statusMentah = (matchData.ikut_sesi || '').toLowerCase().trim();
                         if (statusMentah === 'ya' || statusMentah === 'yes') {
                             tdStatus.innerText = "Yes";
-                            tdStatus.className += " bg-cyan-100 text-cyan-900"; // Warna cyan grid Excel Anda
+                            tdStatus.className += " bg-cyan-100 text-cyan-900"; // Background Cyan terang
                         } else {
                             tdStatus.innerText = "No";
                             tdStatus.className += " bg-slate-50 text-slate-400 font-normal";
                         }
                     } else {
-                        // Jika tidak ada data pengisian hari itu, default "No"
+                        // Jika belum ada data masuk harian, default "No"
                         tdStatus.innerText = "No";
                         tdStatus.className += " bg-slate-50 text-slate-400 font-normal";
                     }
@@ -199,24 +169,20 @@
             });
         }
 
-        // Fungsi unduh PDF per bulan format Landscape rapi
+        // Cetak format Landscape Legal panjang biar muat semua tanggal
         function downloadMatriksPDF() {
             const element = document.getElementById('area-cetak-matriks');
-            const bulanDipilih = parseInt(document.getElementById('pilih-bulan').value);
-            
             const opsi = {
                 margin:       [0.3, 0.3, 0.3, 0.3],
-                filename:     `Matriks_Absensi_${namaBulanIndo[bulanDipilih]}_2026.pdf`,
+                filename:     `Matriks_Absensi_Juli_2026.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'legal', orientation: 'landscape' } // Landscape kertas Legal panjang agar muat 31 kolom ke kanan
+                jsPDF:        { unit: 'in', format: 'legal', orientation: 'landscape' }
             };
-
             html2pdf().set(opsi).from(element).save();
         }
 
-        // Jalankan kalkulasi matriks pertama kali halaman dibuka
-        window.addEventListener('DOMContentLoaded', renderMatriksHarian);
+        window.addEventListener('DOMContentLoaded', renderMatriksJuli);
     </script>
 </body>
 </html>
