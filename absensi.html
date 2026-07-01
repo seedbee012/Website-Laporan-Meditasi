@@ -3,196 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekap Absensi Meditasi</title>
+    <title>Matriks Absensi Bulanan Meditasi</title>
     <!-- Script Tailwind & html2pdf -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .table-container {
+            max-height: 75vh;
+            overflow: auto;
         }
-        .animate-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+        /* Mengunci kolom No dan Nama agar tidak bergeser saat scroll horizontal */
+        .sticky-col-no {
+            position: sticky;
+            left: 0;
+            background-color: #ffffff;
+            z-index: 10;
+        }
+        .sticky-col-nama {
+            position: sticky;
+            left: 35px;
+            background-color: #ffffff;
+            z-index: 10;
+            box-shadow: 2px 0 5px -2px rgba(0,0,0,0.1);
+        }
+        .sticky-header-no {
+            position: sticky;
+            left: 0;
+            top: 0;
+            background-color: #0f172a;
+            z-index: 20;
+        }
+        .sticky-header-nama {
+            position: sticky;
+            left: 35px;
+            top: 0;
+            background-color: #0f172a;
+            z-index: 20;
+        }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
+<body class="text-slate-800 antialiased min-h-screen py-6 px-4">
 
-    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 animate-fade-in">
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-6">
         
         <!-- NAVIGASI ATAS -->
         <div class="mb-6 flex flex-wrap gap-3 justify-between items-center border-b border-slate-100 pb-4 no-print">
             <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">
                 ← Kembali ke Isi Jurnal
             </a>
-            <a href="riwayat.html" class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-900 text-sm font-semibold transition-colors">
-                Lihat Jurnal Lengkap →
-            </a>
-        </div>
-
-        <!-- HEADER HALAMAN -->
-        <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Lembar Absensi Kehadiran Meditasi</h1>
-                <p class="text-sm text-slate-500 mt-1">Gunakan filter untuk menentukan tanggal atau periode absensi yang ingin dicetak.</p>
-            </div>
-            <!-- TOMBOL DOWNLOAD PDF ABSENSI -->
-            <button onclick="downloadPDFAbsensi()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer no-print">
-                Unduh Absensi (PDF) 📄
+            <button onclick="downloadMatriksPDF()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer">
+                Unduh PDF Matriks Bulanan 📄
             </button>
         </div>
 
-        <!-- PANEL FILTER ABSENSI -->
-        <div class="bg-slate-50 rounded-xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
-            <div>
-                <label for="filter-nama" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cari Nama Murid</label>
-                <input type="text" id="filter-nama" oninput="renderAbsensi()" placeholder="Semua murid..." class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
-            </div>
-            <div>
-                <label for="filter-tgl-mulai" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Dari Tanggal</label>
-                <input type="date" id="filter-tgl-mulai" onchange="renderAbsensi()" class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
-            </div>
-            <div>
-                <label for="filter-tgl-selesai" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sampai Tanggal</label>
-                <input type="date" id="filter-tgl-selesai" onchange="renderAbsensi()" class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
-            </div>
+        <!-- HEADER UTAMA -->
+        <div class="mb-6 text-center">
+            <h1 class="text-xl font-bold text-slate-900 uppercase tracking-tight">Matriks Rekap Absensi Bulanan</h1>
+            <p class="text-xs text-slate-500 mt-1">Rekapitulasi status kehadiran murid per bulan periode Juli s/d Desember.</p>
         </div>
 
-        <!-- AREA EXPORT PDF ABSENSI (Potrait Ringkas) -->
-        <div id="area-cetak-absensi" class="p-2">
-            <!-- Header Dokumen khusus cetakan -->
-            <div class="mb-4 text-center border-b-2 border-slate-900 pb-3">
-                <h2 class="text-xl font-bold text-slate-900 uppercase">Laporan Kehadiran Kelas Meditasi</h2>
-                <p id="pdf-periode-info" class="text-xs text-slate-600 font-medium mt-0.5">Semua Periode</p>
-            </div>
-
-            <!-- Ringkasan Singkat -->
-            <div class="mb-4 grid grid-cols-2 gap-4 bg-slate-50 rounded-lg p-3 text-xs border border-slate-100 font-medium">
-                <div>Total Jurnal Terisi: <span id="stat-total" class="font-bold text-slate-900">0</span> kali</div>
-                <div>Total Hadir Meditasi: <span id="stat-hadir" class="font-bold text-emerald-700">0</span> kali</div>
-            </div>
-
-            <div class="overflow-x-auto rounded-xl border border-slate-200">
-                <table class="w-full text-left border-collapse bg-white text-sm">
+        <!-- AREA CETAK MATRIKS -->
+        <div id="area-cetak-matriks" class="p-1">
+            <div class="table-container border border-slate-200 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
                     <thead>
-                        <tr class="bg-slate-900 text-white text-xs uppercase tracking-wider font-semibold">
-                            <th class="p-3">Tanggal</th>
-                            <th class="p-3">Nama Murid</th>
-                            <th class="p-3 text-center">Status Kehadiran</th>
-                            <th class="p-3">Keterangan Waktu (Jalan / Duduk)</th>
+                        <tr class="bg-slate-900 text-white font-semibold text-center divide-x divide-slate-700">
+                            <th class="p-3 text-left sticky-header-no min-w-[35px]">No</th>
+                            <th class="p-3 text-left sticky-header-nama min-w-[150px]">Nama Murid</th>
+                            <th class="p-3 text-center min-w-[90px]">Juli</th>
+                            <th class="p-3 text-center min-w-[90px]">Agustus</th>
+                            <th class="p-3 text-center min-w-[90px]">September</th>
+                            <th class="p-3 text-center min-w-[90px]">Oktober</th>
+                            <th class="p-3 text-center min-w-[90px]">November</th>
+                            <th class="p-3 text-center min-w-[90px]">Desember</th>
                         </tr>
                     </thead>
-                    <tbody id="absensi-table-body" class="divide-y divide-slate-200 text-slate-700">
-                        <!-- Di-render otomatis lewat Javascript -->
+                    <tbody id="matriks-bulanan-body" class="divide-y divide-slate-200 bg-white">
+                        <!-- Data Baris Murid akan di-render otomatis lewat Javascript -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- STATE KOSONG -->
-        <div id="empty-state" class="text-center py-12 text-slate-400 font-medium hidden no-print">
-            🚫 Tidak ada data absensi untuk filter yang Anda pilih.
-        </div>
-
     </div>
 
     <script>
-        function formatTanggal(stringTanggal) {
-            if(!stringTanggal) return '-';
-            const opsi = { year: 'numeric', month: 'short', day: 'numeric' };
-            return new Date(stringTanggal).toLocaleDateString('id-ID', opsi);
-        }
+        // Daftar nama murid tetap sesuai urutan gambar Anda
+        const daftarMurid = [
+            "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", 
+            "Limey", "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", 
+            "Rini", "Johan", "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", 
+            "Aji", "Nanda", "Henry", "Yanti", "Ria", "Enje", "Diana", 
+            "Adi", "Neneng", "Suryani"
+        ];
 
-        function renderAbsensi() {
+        // Definisi urutan bulan target (Juli = indeks ke-6, Desember = indeks ke-11)
+        const indeksBulan = [6, 7, 8, 9, 10, 11]; 
+
+        function renderMatriksBulanan() {
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            const tbody = document.getElementById('absensi-table-body');
-            const emptyState = document.getElementById('empty-state');
-            
-            const qNama = document.getElementById('filter-nama').value.toLowerCase().trim();
-            const tglMulai = document.getElementById('filter-tgl-mulai').value;
-            const tglSelesai = document.getElementById('filter-tgl-selesai').value;
-
-            // Update teks informasi periode untuk PDF
-            const pdfPeriode = document.getElementById('pdf-periode-info');
-            if(tglMulai && tglSelesai) {
-                pdfPeriode.innerText = `Periode: ${formatTanggal(tglMulai)} s/d ${formatTanggal(tglSelesai)}`;
-            } else if(tglMulai) {
-                pdfPeriode.innerText = `Sejak Tanggal: ${formatTanggal(tglMulai)}`;
-            } else if(tglSelesai) {
-                pdfPeriode.innerText = `Hingga Tanggal: ${formatTanggal(tglSelesai)}`;
-            } else {
-                pdfPeriode.innerText = "Semua Riwayat Periode Kehadiran";
-            }
-
+            const tbody = document.getElementById('matriks-bulanan-body');
             tbody.innerHTML = '';
 
-            // Filter Data
-            const filteredData = db.filter(item => {
-                const itemNama = (item.nama || '').toLowerCase().trim();
-                const matchNama = itemNama.includes(qNama);
-                
-                let matchTanggal = true;
-                if(tglMulai && item.tanggal < tglMulai) matchTanggal = false;
-                if(tglSelesai && item.tanggal > tglSelesai) matchTanggal = false;
-
-                return matchNama && matchTanggal;
-            });
-
-            // Urutkan berdasarkan tanggal terbaru
-            filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
-            // Hitung statistik singkat
-            let totalIsi = filteredData.length;
-            let totalHadir = filteredData.filter(i => i.ikut_sesi === 'Ya').length;
-            document.getElementById('stat-total').innerText = totalIsi;
-            document.getElementById('stat-hadir').innerText = totalHadir;
-
-            if(filteredData.length === 0) {
-                emptyState.classList.remove('hidden');
-                return;
-            } else {
-                emptyState.classList.add('hidden');
-            }
-
-            filteredData.forEach(item => {
+            daftarMurid.forEach((nama, index) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors text-xs sm:text-sm";
+                tr.className = "hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center";
 
-                const isHadir = item.ikut_sesi === 'Ya';
-                const badgeStatus = isHadir 
-                    ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">✓ HADIR</span>` 
-                    : `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-0.5 rounded-full font-bold">𐄂 ABSEN</span>`;
+                // 1. Kolom Nomor Urut (Sticky)
+                const tdNo = document.createElement('td');
+                tdNo.className = "p-3 font-medium text-slate-400 bg-white text-left sticky-col-no min-w-[35px]";
+                tdNo.innerText = index + 1;
+                tr.appendChild(tdNo);
 
-                // Gabungkan info waktu jalan dan duduk secara singkat
-                const infoWaktu = `Jalan: ${item.durasi_jalan || '-'} | Duduk: ${item.durasi_duduk || '-'}`;
+                // 2. Kolom Nama Murid (Sticky)
+                const tdNama = document.createElement('td');
+                tdNama.className = "p-3 font-semibold text-slate-900 bg-white text-left sticky-col-nama min-w-[150px]";
+                tdNama.innerText = nama;
+                tr.appendChild(tdNama);
 
-                tr.innerHTML = `
-                    <td class="p-3 font-medium text-slate-900 whitespace-nowrap">${formatTanggal(item.tanggal)}</td>
-                    <td class="p-3 font-semibold text-slate-800">${item.nama || '-'}</td>
-                    <td class="p-3 text-center">${badgeStatus}</td>
-                    <td class="p-3 text-slate-500 text-xs font-mono">${infoWaktu}</td>
-                `;
+                // 3. Looping Pengecekan per baris bulan (Juli sampai Desember)
+                indeksBulan.forEach(bulan => {
+                    const tdStatus = document.createElement('td');
+                    tdStatus.className = "p-3 text-center font-bold text-[11px]";
+
+                    // Cari apakah murid ini punya riwayat HADIR ("Ya"/"Yes") di bulan berjalan
+                    const adakahKehadiranDiBulanIni = db.some(item => {
+                        const itemNama = (item.nama || '').toLowerCase().trim();
+                        const targetNama = nama.toLowerCase().trim();
+                        
+                        if (item.tanggal) {
+                            const d = new Date(item.tanggal);
+                            const matchBulan = d.getMonth() === bulan;
+                            const statusMentah = (item.ikut_sesi || '').toLowerCase().trim();
+                            const isHadir = statusMentah === 'ya' || statusMentah === 'yes';
+                            
+                            return itemNama.includes(targetNama) && matchBulan && isHadir;
+                        }
+                        return false;
+                    });
+
+                    // Atur warna dan teks penanda box persis gaya excel Anda
+                    if (adakahKehadiranDiBulanIni) {
+                        tdStatus.innerText = "Yes";
+                        tdStatus.className += " bg-cyan-100 text-cyan-900"; // Cyan terang pas sesuai mockup
+                    } else {
+                        tdStatus.innerText = "No";
+                        tdStatus.className += " bg-slate-50 text-slate-400 font-normal";
+                    }
+
+                    tr.appendChild(tdStatus);
+                });
+
                 tbody.appendChild(tr);
             });
         }
 
-        function downloadPDFAbsensi() {
-            const qNama = document.getElementById('filter-nama').value.trim() || "Semua_Murid";
-            const element = document.getElementById('area-cetak-absensi');
-            
+        // Fungsi download PDF layout Landscape rapi
+        function downloadMatriksPDF() {
+            const element = document.getElementById('area-cetak-matriks');
             const opsi = {
-                margin:       0.4,
-                filename:     `Laporan_Absensi_Meditasi_${qNama}.pdf`,
+                margin:       [0.4, 0.4, 0.4, 0.4],
+                filename:     `Rekap_Matriks_Bulanan_Meditasi.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' } // Format tegak (portrait) agar rapi
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
             };
-
             html2pdf().set(opsi).from(element).save();
         }
 
-        // Jalankan saat halaman dibuka
-        window.addEventListener('DOMContentLoaded', renderAbsensi);
+        // Inisialisasi render saat halaman dibuka
+        window.addEventListener('DOMContentLoaded', renderMatriksBulanan);
     </script>
 </body>
 </html>
