@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Absensi Matriks Meditasi (Juli - Agustus)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { background-color: #f8fafc; }
+        .select-yes { background-color: #06b6d4 !important; color: #ffffff !important; font-weight: bold; }
+        .select-no { background-color: #f1f5f9 !important; color: #475569 !important; }
+        .sticky-col { position: sticky; left: 0; background-color: #f8fafc !important; border-right: 2px solid #cbd5e1 !important; z-index: 10; }
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-8">
+
+    <div class="max-w-full mx-auto bg-white rounded-2xl shadow-md border border-slate-100 p-4 sm:p-6">
+        
+        <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <a href="index.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+                ← Kembali ke Halaman Utama
+            </a>
+            <button id="btn-save-matrix" onclick="saveMatrixChanges()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer">
+                💾 Simpan Semua Perubahan Absensi
+            </button>
+        </div>
+
+        <div class="mb-6">
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">📋 Tabel Kontrol Absensi (1 Juli - 31 Agustus)</h1>
+            <p id="access-notice" class="text-xs sm:text-sm text-slate-500 mt-1">Sistem sedang memuat hak akses...</p>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-xs custom-scrollbar">
+            <table class="w-full text-xs sm:text-sm text-left border-collapse">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-20">
+                    <tr id="table-headers"></tr>
+                </thead>
+                <tbody id="table-matrix-rows" class="divide-y divide-slate-200 bg-white"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-950 text-white px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium z-50">
+        ✅ Perubahan absensi berhasil disimpan ke sistem!
+    </div>
+
+    <script>
+        const masterMurid = [
+            "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey", 
+            "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan", 
+            "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry", 
+            "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
+        ];
+        
+        const tanggalList = [];
+        for (let i = 1; i <= 31; i++) tanggalList.push(`2026-07-${i < 10 ? '0'+i : i}`);
+
+        function renderMatrix() {
+            const role = localStorage.getItem('currentUserRole') || 'User';
+            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            
+            // Konfigurasi Notifikasi Hak Akses di Header Halaman
+            const notice = document.getElementById('access-notice');
+            const saveBtn = document.getElementById('btn-save-matrix');
+            
+            if(role === 'SukWan' || role === 'Titin') {
+                notice.innerText = `Mode Manajemen Aktif: Anda memiliki izin mengubah kotak kehadiran murid.`;
+                notice.className = "text-xs sm:text-sm text-blue-600 font-medium mt-1";
+                saveBtn.classList.remove('hidden');
+            } else {
+                notice.innerText = "Mode Tinjauan: Anda tidak memiliki akses untuk mengubah absensi (Read-Only).";
+                notice.className = "text-xs sm:text-sm text-amber-600 font-medium mt-1";
+                saveBtn.classList.add('hidden');
+            }
+
+            const headerRow = document.getElementById('table-headers');
+            const tbody = document.getElementById('table-matrix-rows');
+
+            let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama Murid</th>`;
+            tanggalList.forEach(tgl => {
+                const d = new Date(tgl);
+                headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}</th>`;
+            });
+            headerRow.innerHTML = headerHTML;
+
+            tbody.innerHTML = '';
+            masterMurid.forEach(nama => {
+                const tr = document.createElement('tr');
+                let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
+
+                tanggalList.forEach(tgl => {
+                    const sudahIsiJurnal = db.some(item => item.tanggal === tgl && item.nama.toLowerCase().trim() === nama.toLowerCase().trim());
+                    const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+                    
+                    let status = sudahIsiJurnal ? "Yes" : "No";
+                    if (manualSaves[nama]) status = manualSaves[nama];
+
+                    const selectClass = status === "Yes" ? "select-yes" : "select-no";
+                    
+                    // KUNCI DROPDOWN JIKA PENGGUNA BUKAN AUTHORIZED EDITOR/ADMIN
+                    const isDisabled = (role !== 'SukWan' && role !== 'Titin') ? 'disabled' : '';
+
+                    rowHTML += `
+                        <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
+                            <select data-nama="${nama}" data-tanggal="${tgl}" onchange="updateColors(this)" ${isDisabled}
+                                class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none font-semibold transition-all ${selectClass} disabled:opacity-90 disabled:cursor-not-allowed">
+                                <option value="Yes" ${status === 'Yes' ? 'selected' : ''}>Yes</option>
+                                <option value="No" ${status === 'No' ? 'selected' : ''}>No</option>
+                            </select>
+                        </td>
+                    `;
+                });
+
+                tr.innerHTML = rowHTML;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateColors(element) {
+            if (element.value === "Yes") {
+                element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none font-semibold transition-all select-yes";
+            } else {
+                element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none font-semibold transition-all select-no";
+            }
+        }
+
+        function saveMatrixChanges() {
+            const dropdowns = document.querySelectorAll('select[data-nama]');
+            const dataPerTanggal = {};
+
+            dropdowns.forEach(select => {
+                const nama = select.getAttribute('data-nama');
+                const tgl = select.getAttribute('data-tanggal');
+                dataPerTanggal[tgl] = dataPerTanggal[tgl] || {};
+                dataPerTanggal[tgl][nama] = select.value;
+            });
+
+            for (const tgl in dataPerTanggal) {
+                localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
+            }
+
+            const toast = document.getElementById('toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+            renderMatrix();
+        }
+
+        renderMatrix();
+    </script>
+</body>
+</html>
