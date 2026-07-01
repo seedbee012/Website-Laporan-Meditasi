@@ -138,7 +138,7 @@
                 badge.className = "flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs";
                 
                 if (role === 'SukWan') {
-                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Guru Aktif:</strong> Jadwalkan target masa depan di bawah. Sistem akan menempelkannya otomatis saat murid menulis jurnal.";
+                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Guru Aktif:</strong> Ketik/paste target langsung di kotak tabel (otomatis menyimpan), atau gunakan panel massal untuk range tanggal.";
                     bulkPanel.classList.remove('hidden');
                 } else {
                     infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Editor Aktif:</strong> Memonitor data jurnal dan perkembangan spiritual.";
@@ -186,31 +186,24 @@
                     ? `<span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-semibold">Ya</span>` 
                     : `<span class="bg-rose-50 text-rose-600 text-xs px-2 py-1 rounded-full font-semibold">Tidak</span>`;
 
+                // PERBAIKAN: Menghapus tombol simpan dan menambahkan pemicu 'oninput' untuk auto-save instan
                 let kolomPRDinamis = "";
                 if (role === 'SukWan') {
                     kolomPRDinamis = `
-                        <div class="space-y-2">
-                            <textarea id="live-pr-${item.id}" rows="2" class="w-full bg-white border border-amber-300 rounded-lg p-1.5 text-xs text-amber-950 outline-none focus:border-amber-600" placeholder="Ubah target harian...">${item.pr_individu || ''}</textarea>
-                            <button onclick="simpanPRLangsung(${item.id})" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-medium text-[10px] py-1 px-2 rounded-md transition-all shadow-xs cursor-pointer">
-                                💾 Simpan
-                            </button>
-                        </div>
+                        <textarea id="live-pr-${item.id}" oninput="simpanPRLangsungOtomatis(${item.id})" rows="3" class="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs text-amber-950 outline-none focus:border-amber-500 focus:bg-amber-50/20 transition-all shadow-inner" placeholder="Ketik/paste target batin...">${item.pr_individu || ''}</textarea>
                     `;
                 } else {
                     kolomPRDinamis = `<span class="text-xs font-medium text-amber-950">${item.pr_individu || '<em class="text-slate-400">Belum ada feedback target...</em>'}</span>`;
                 }
 
-                // PERBAIKAN STRUKTUR TOMBOL AKSI: Dibuat berjejer horizontal agar pasti kelihatan jelas
                 let tombolAksiKonten = "";
                 if(role === 'User') {
-                    // Jika user biasa hanya ada tombol Edit
                     tombolAksiKonten = `
                         <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
                             Edit
                         </button>
                     `;
                 } else {
-                    // Jika Admin, muncul tombol Koreksi DAN Tombol Hapus berdampingan
                     tombolAksiKonten = `
                         <div class="flex items-center justify-center gap-2 min-w-[140px]">
                             <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
@@ -247,18 +240,17 @@
             });
         }
 
-        function simpanPRLangsung(id) {
+        // FUNGSI BARU: Otomatis Menyimpan Setiap Kali Ci Suk Wan Mengetik/Paste
+        function simpanPRLangsungOtomatis(id) {
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
             const inputTeks = document.getElementById(`live-pr-${id}`).value;
             const idx = db.findIndex(item => item.id === id);
             if(idx !== -1) {
                 db[idx].pr_individu = inputTeks;
                 localStorage.setItem('meditasi_db', JSON.stringify(db));
-                renderTable();
             }
         }
 
-        // FUNGSI UNTUK MENGHAPUS DATA JURNAL DOUBLE
         function hapusJurnal(id, nama, tanggal) {
             const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data jurnal milik "${nama}" pada tanggal ${tanggal}? Data yang dihapus tidak bisa dikembalikan.`);
             if (konfirmasi) {
