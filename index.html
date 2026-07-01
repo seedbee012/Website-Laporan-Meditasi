@@ -121,7 +121,7 @@
                     <textarea id="muncul_cahaya" name="muncul_cahaya" rows="3" placeholder="Contoh: Tidak ada/Ya, sedikit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
-<div>
+                <div>
                     <label for="pengalaman" class="block text-sm font-medium text-slate-700 mb-1">Pengalaman / Pengamatan Kondisi Batin</label>
                     <textarea id="pengalaman" name="pengalaman" rows="3" placeholder="Apa yang Anda rasakan selama meditasi?" class="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
@@ -130,11 +130,6 @@
                     <label for="review_sharing" class="block text-sm font-medium text-indigo-900 mb-1">Review dari Ci Suk Wan saat Sesi Sharing (Bisa ditulis oleh murid/siapa saja)</label>
                     <textarea id="review_sharing" name="review_sharing" rows="2" placeholder="Tuliskan catatan arahan batin dari Ci Suk Wan yang didapatkan sewaktu sesi sharing online..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
                 </div>
-            </div>
-
-            <div id="pr-section" class="bg-amber-50/60 border border-amber-100 rounded-xl p-4">
-                <label for="pr_individu" class="block text-sm font-medium text-amber-900 mb-1">PR Individu / Target Batin Khusus (Feedback Penguji dari Ci Suk Wan)</label>
-                <textarea id="pr_individu" name="pr_individu" rows="3" placeholder="Bagian ini terkunci, hanya bisa ditulis langsung oleh Ci Suk Wan..." class="w-full rounded-lg border border-amber-200 bg-white/90 px-4 py-3 text-sm outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"></textarea>
             </div>
 
             <div class="pt-2">
@@ -178,14 +173,12 @@
             const formBlock = document.getElementById('login-form-block');
             const statusBlock = document.getElementById('login-status-block');
             const displayName = document.getElementById('user-display-name');
-            const prField = document.getElementById('pr_individu');
             const roleIndicator = document.getElementById('role-indicator');
             const btnSubmit = document.getElementById('btn-submit');
 
             if(role === 'User') {
                 formBlock.classList.remove('hidden');
                 statusBlock.classList.add('hidden');
-                prField.disabled = true;
                 roleIndicator.innerText = "Mode: Pengguna Umum";
                 roleIndicator.className = "mt-2 text-xs sm:text-sm text-emerald-600 font-medium";
                 btnSubmit.innerText = "Simpan Jurnal Meditasi";
@@ -194,20 +187,23 @@
                 statusBlock.classList.remove('hidden');
                 displayName.innerText = role === 'SukWan' ? "Ci Suk Wan" : "Ci Titin";
                 roleIndicator.innerText = `Mode: ${role}`;
-                btnSubmit.innerText = "Simpan Perubahan & PR";
-                
-                // Khusus Request 1: Hanya Ci Suk Wan yang bisa edit field PR
-                if (role === 'SukWan') {
-                    prField.disabled = false;
-                } else {
-                    prField.disabled = true;
-                }
+                btnSubmit.innerText = "Simpan Perubahan Jurnal";
             }
         }
 
         document.getElementById('meditationForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            
+            // Mengambil data lama agar data `pr_individu` tidak hilang saat di-update dari index.html
+            let existingPr = "";
+            if (editingId) {
+                const oldItem = db.find(i => i.id === editingId);
+                if (oldItem && oldItem.pr_individu) {
+                    existingPr = oldItem.pr_individu;
+                }
+            }
+
             const formData = {
                 id: editingId || Date.now(),
                 tanggal: document.getElementById('tanggal').value,
@@ -221,8 +217,8 @@
                 durasi_halus: document.getElementById('durasi_halus').value,
                 muncul_cahaya: document.getElementById('muncul_cahaya').value,
                 pengalaman: document.getElementById('pengalaman').value,
-                review_sharing: document.getElementById('review_sharing').value, // DATA BARU 2
-                pr_individu: document.getElementById('pr_individu').value
+                review_sharing: document.getElementById('review_sharing').value,
+                pr_individu: existingPr // Mempertahankan data PR yang diatur oleh Ci Suk Wan di riwayat
             };
 
             if (editingId) {
@@ -260,8 +256,7 @@
                     document.getElementById('durasi_halus').value = item.durasi_halus;
                     document.getElementById('muncul_cahaya').value = item.muncul_cahaya || '';
                     document.getElementById('pengalaman').value = item.pengalaman;
-                    document.getElementById('review_sharing').value = item.review_sharing || ''; // BIND DATA BARU 2
-                    document.getElementById('pr_individu').value = item.pr_individu || '';
+                    document.getElementById('review_sharing').value = item.review_sharing || '';
                     document.getElementById('review_sharing').focus();
                 }
             }
