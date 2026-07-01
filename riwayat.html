@@ -91,7 +91,7 @@
                         <th class="p-4 min-w-[180px]">Pengalaman Batin</th>
                         <th class="p-4 min-w-[180px] bg-indigo-950 text-indigo-100">Review Sesi Sharing</th>
                         <th class="p-4 min-w-[220px] bg-amber-950 text-amber-100">PR/Target Individu (Hanya Ci Suk Wan)</th>
-                        <th class="p-4 text-center sticky right-0 bg-slate-900 z-10">Aksi</th>
+                        <th class="p-4 text-center sticky right-0 bg-slate-900 z-10 min-w-[150px]">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="riwayat-table-body" class="divide-y divide-slate-100 text-slate-700">
@@ -135,13 +135,13 @@
                 bulkPanel.classList.add('hidden');
             } else {
                 badge.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
-                badge.className = "flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold";
+                badge.className = "flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs";
                 
                 if (role === 'SukWan') {
-                    infoAkses.innerText = "Mode Guru Aktif: Jadwalkan target masa depan di bawah. Sistem akan menempelkannya otomatis saat murid menulis jurnal.";
+                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Guru Aktif:</strong> Jadwalkan target masa depan di bawah. Sistem akan menempelkannya otomatis saat murid menulis jurnal.";
                     bulkPanel.classList.remove('hidden');
                 } else {
-                    infoAkses.innerText = "Mode Editor Aktif: Memonitor data jurnal dan perkembangan spiritual.";
+                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Editor Aktif:</strong> Memonitor data jurnal dan perkembangan spiritual.";
                     bulkPanel.classList.add('hidden');
                 }
             }
@@ -180,7 +180,7 @@
 
             filteredData.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors align-top";
+                tr.className = "hover:bg-slate-50/80 transition-colors align-top group";
 
                 const badgeSesi = item.ikut_sesi === 'Ya' 
                     ? `<span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-semibold">Ya</span>` 
@@ -200,13 +200,26 @@
                     kolomPRDinamis = `<span class="text-xs font-medium text-amber-950">${item.pr_individu || '<em class="text-slate-400">Belum ada feedback target...</em>'}</span>`;
                 }
 
-                // Pengkondisian tombol aksi (Hapus hanya muncul di mode Admin)
-                let tombolAksiTambahan = "";
-                if(role !== 'User') {
-                    tombolAksiTambahan = `
-                        <button onclick="hapusJurnal(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
-                            Hapus
+                // PERBAIKAN STRUKTUR TOMBOL AKSI: Dibuat berjejer horizontal agar pasti kelihatan jelas
+                let tombolAksiKonten = "";
+                if(role === 'User') {
+                    // Jika user biasa hanya ada tombol Edit
+                    tombolAksiKonten = `
+                        <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
+                            Edit
                         </button>
+                    `;
+                } else {
+                    // Jika Admin, muncul tombol Koreksi DAN Tombol Hapus berdampingan
+                    tombolAksiKonten = `
+                        <div class="flex items-center justify-center gap-2 min-w-[140px]">
+                            <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
+                                Koreksi
+                            </button>
+                            <button onclick="hapusJurnal(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
+                                Hapus 🗑️
+                            </button>
+                        </div>
                     `;
                 }
 
@@ -227,12 +240,7 @@
                     </td>
                     <td class="p-4 bg-amber-50/40 border-x border-amber-100">${kolomPRDinamis}</td>
                     <td class="p-4 text-center sticky right-0 bg-white group-hover:bg-slate-50 z-10 border-l border-slate-100">
-                        <div class="flex flex-col gap-1.5 justify-center">
-                            <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
-                                ${role === 'User' ? 'Edit' : 'Koreksi Penuh'}
-                            </button>
-                            ${tombolAksiTambahan}
-                        </div>
+                        ${tombolAksiKonten}
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -250,7 +258,7 @@
             }
         }
 
-        // FUNGSI UNTUK MENGHAPUS DATA JURNAL DOUBLE / INDIKASI SALAH ISI
+        // FUNGSI UNTUK MENGHAPUS DATA JURNAL DOUBLE
         function hapusJurnal(id, nama, tanggal) {
             const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data jurnal milik "${nama}" pada tanggal ${tanggal}? Data yang dihapus tidak bisa dikembalikan.`);
             if (konfirmasi) {
@@ -258,7 +266,7 @@
                 db = db.filter(item => item.id !== id);
                 localStorage.setItem('meditasi_db', JSON.stringify(db));
                 alert("Jurnal sukses dihapus!");
-                renderTable(); // Update tabel instan
+                renderTable();
             }
         }
 
