@@ -87,13 +87,13 @@
 
             <div class="space-y-4">
                 <div>
-                    <label for="durasi_duduk" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Duduk</label>
-                    <textarea id="durasi_duduk" name="durasi_duduk" rows="3" placeholder="Contoh: 30 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="durasi_duduk" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Jalan</label>
+                    <textarea id="durasi_duduk" name="durasi_jalan" rows="3" placeholder="Contoh: 30 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="durasi_jalan" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Jalan</label>
-                    <textarea id="durasi_jalan" name="durasi_jalan" rows="3" placeholder="Contoh: 10 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="durasi_jalan" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Duduk</label>
+                    <textarea id="durasi_jalan" name="durasi_duduk" rows="3" placeholder="Contoh: 10 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
@@ -209,8 +209,8 @@
                 tanggal: document.getElementById('tanggal').value,
                 nama: document.getElementById('nama').value,
                 ikut_sesi: document.querySelector('input[name="ikut_sesi"]:checked').value,
-                durasi_duduk: document.getElementById('durasi_duduk').value,
                 durasi_jalan: document.getElementById('durasi_jalan').value,
+                durasi_duduk: document.getElementById('durasi_duduk').value,
                 frekuensi_wandering: document.getElementById('frekuensi_wandering').value,
                 kembali_cepat: document.getElementById('kembali_cepat').value,
                 durasi_hold: document.getElementById('durasi_hold').value,
@@ -248,8 +248,8 @@
                     document.getElementById('tanggal').value = item.tanggal;
                     document.getElementById('nama').value = item.nama;
                     document.querySelector(`input[name="ikut_sesi"][value="${item.ikut_sesi}"]`).checked = true;
-                    document.getElementById('durasi_duduk').value = item.durasi_duduk;
                     document.getElementById('durasi_jalan').value = item.durasi_jalan;
+                    document.getElementById('durasi_duduk').value = item.durasi_duduk;
                     document.getElementById('frekuensi_wandering').value = item.frekuensi_wandering;
                     document.getElementById('kembali_cepat').value = item.kembali_cepat;
                     document.getElementById('durasi_hold').value = item.durasi_hold;
