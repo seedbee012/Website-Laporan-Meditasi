@@ -33,9 +33,11 @@
         </div>
 
         <div id="panel-bulk-pr" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
-            <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                ✨ Fitur Khusus Ci Suk Wan: Pengisian PR / Target Massal via Range Tanggal
+            <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-2">
+                ✨ Jadwalkan PR / Target Batin Masa Depan (Otomatis Menempel)
             </h3>
+            <p class="text-xs text-amber-700 mb-3">Meskipun murid belum mengisi jurnal sampai tanggal tujuan, PR ini akan otomatis masuk saat mereka mulai menulis nanti.</p>
+            
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label class="block text-xs font-semibold text-amber-800 mb-1">Nama Murid (Harus persis)</label>
@@ -53,10 +55,10 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-semibold text-amber-800 mb-1">Isi materi PR / Target Batin</label>
-                    <textarea id="bulk-teks-pr" rows="2" placeholder="Ketik atau paste materi target batin di sini untuk langsung disalin ke semua rentang tanggal di atas..." class="w-full bg-white rounded-lg border border-amber-200 px-3 py-2 text-sm outline-none focus:border-amber-500"></textarea>
+                    <textarea id="bulk-teks-pr" rows="2" placeholder="Ketik atau paste materi target di sini..." class="w-full bg-white rounded-lg border border-amber-200 px-3 py-2 text-sm outline-none focus:border-amber-500"></textarea>
                 </div>
                 <button onclick="prosesBulkPR()" class="bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-xs">
-                    ⚡ Terapkan PR ke Semua Tanggal Terpilih
+                    ⚡ Terapkan & Kunci Target Rentang Tanggal
                 </button>
             </div>
         </div>
@@ -125,7 +127,6 @@
             const queryNama = document.getElementById('search-nama').value.toLowerCase().trim();
             const filterTgl = document.getElementById('search-tanggal').value;
 
-            // Kontrol Tampilan Badge & Panel Khusus Bulk PR Suk Wan
             const badge = document.getElementById('role-badge');
             if(role === 'User') {
                 badge.innerText = "Mode: Pengguna Umum";
@@ -137,7 +138,7 @@
                 badge.className = "flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold";
                 
                 if (role === 'SukWan') {
-                    infoAkses.innerText = "Mode Guru Aktif: Anda bisa menulis target satuan langsung di tabel, atau gunakan panel massal di bawah untuk range tanggal.";
+                    infoAkses.innerText = "Mode Guru Aktif: Jadwalkan target masa depan di bawah. Sistem akan menempelkannya otomatis saat murid menulis jurnal.";
                     bulkPanel.classList.remove('hidden');
                 } else {
                     infoAkses.innerText = "Mode Editor Aktif: Memonitor data jurnal dan perkembangan spiritual.";
@@ -189,7 +190,7 @@
                 if (role === 'SukWan') {
                     kolomPRDinamis = `
                         <div class="space-y-2">
-                            <textarea id="live-pr-${item.id}" rows="2" class="w-full bg-white border border-amber-300 rounded-lg p-1.5 text-xs text-amber-950 outline-none focus:border-amber-600" placeholder="Tulis target batin baru...">${item.pr_individu || ''}</textarea>
+                            <textarea id="live-pr-${item.id}" rows="2" class="w-full bg-white border border-amber-300 rounded-lg p-1.5 text-xs text-amber-950 outline-none focus:border-amber-600" placeholder="Ubah target harian...">${item.pr_individu || ''}</textarea>
                             <button onclick="simpanPRLangsung(${item.id})" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-medium text-[10px] py-1 px-2 rounded-md transition-all shadow-xs cursor-pointer">
                                 💾 Simpan
                             </button>
@@ -197,6 +198,16 @@
                     `;
                 } else {
                     kolomPRDinamis = `<span class="text-xs font-medium text-amber-950">${item.pr_individu || '<em class="text-slate-400">Belum ada feedback target...</em>'}</span>`;
+                }
+
+                // Pengkondisian tombol aksi (Hapus hanya muncul di mode Admin)
+                let tombolAksiTambahan = "";
+                if(role !== 'User') {
+                    tombolAksiTambahan = `
+                        <button onclick="hapusJurnal(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
+                            Hapus
+                        </button>
+                    `;
                 }
 
                 tr.innerHTML = `
@@ -216,9 +227,12 @@
                     </td>
                     <td class="p-4 bg-amber-50/40 border-x border-amber-100">${kolomPRDinamis}</td>
                     <td class="p-4 text-center sticky right-0 bg-white group-hover:bg-slate-50 z-10 border-l border-slate-100">
-                        <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
-                            ${role === 'User' ? 'Edit' : 'Koreksi Penuh'}
-                        </button>
+                        <div class="flex flex-col gap-1.5 justify-center">
+                            <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer">
+                                ${role === 'User' ? 'Edit' : 'Koreksi Penuh'}
+                            </button>
+                            ${tombolAksiTambahan}
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -236,43 +250,64 @@
             }
         }
 
-        // FUNGSI UTAMA UNTUK INPUT PR RANGE TANGGAL SEKALIGUS
+        // FUNGSI UNTUK MENGHAPUS DATA JURNAL DOUBLE / INDIKASI SALAH ISI
+        function hapusJurnal(id, nama, tanggal) {
+            const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data jurnal milik "${nama}" pada tanggal ${tanggal}? Data yang dihapus tidak bisa dikembalikan.`);
+            if (konfirmasi) {
+                let db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+                db = db.filter(item => item.id !== id);
+                localStorage.setItem('meditasi_db', JSON.stringify(db));
+                alert("Jurnal sukses dihapus!");
+                renderTable(); // Update tabel instan
+            }
+        }
+
         function prosesBulkPR() {
-            const namaTarget = document.getElementById('bulk-nama').value.trim().toLowerCase();
-            const tglMulai = document.getElementById('bulk-tgl-mulai').value;
-            const tglSelesai = document.getElementById('bulk-tgl-selesai').value;
+            const namaTarget = document.getElementById('bulk-nama').value.trim();
+            const tglMulaiStr = document.getElementById('bulk-tgl-mulai').value;
+            const tglSelesaiStr = document.getElementById('bulk-tgl-selesai').value;
             const teksPR = document.getElementById('bulk-teks-pr').value;
 
-            if(!namaTarget || !tglMulai || !tglSelesai) {
-                alert("Mohon isi Nama Murid, Tanggal Mulai, dan Tanggal Selesai terlebih dahulu!");
+            if(!namaTarget || !tglMulaiStr || !tglSelesaiStr) {
+                alert("Mohon isi Nama Murid, Tanggal Mulai, dan Tanggal Selesai!");
                 return;
             }
 
-            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            let jumlahTerupdate = 0;
+            const targetDb = JSON.parse(localStorage.getItem('target_db')) || [];
+            const start = new Date(tglMulaiStr);
+            const end = new Date(tglSelesaiStr);
+            
+            let currentDate = new Date(start);
+            while(currentDate <= end) {
+                const formatYMD = currentDate.toISOString().split('T')[0];
+                const existingIdx = targetDb.findIndex(t => t.nama.toLowerCase() === namaTarget.toLowerCase() && t.tanggal === formatYMD);
+                if(existingIdx !== -1) {
+                    targetDb[existingIdx].pr_individu = teksPR;
+                } else {
+                    targetDb.push({ nama: namaTarget, tanggal: formatYMD, pr_individu: teksPR });
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            localStorage.setItem('target_db', JSON.stringify(targetDb));
 
-            const start = new Date(tglMulai);
-            const end = new Date(tglSelesai);
+            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            let terupdateJurnalLama = 0;
 
             db.forEach(item => {
                 const itemNama = (item.nama || '').toLowerCase().trim();
-                const itemTanggal = new Date(item.tanggal);
-
-                // Cek nama sama & tanggal masuk dalam range rentang waktu terpilih
-                if(itemNama === namaTarget && itemTanggal >= start && itemTanggal <= end) {
-                    item.pr_individu = teksPR;
-                    jumlahTerupdate++;
+                if (itemNama === namaTarget.toLowerCase() && item.tanggal) {
+                    const itemTanggal = new Date(item.tanggal);
+                    if(itemTanggal >= new Date(tglMulaiStr) && itemTanggal <= new Date(tglSelesaiStr)) {
+                        item.pr_individu = teksPR;
+                        terupdateJurnalLama++;
+                    }
                 }
             });
+            localStorage.setItem('meditasi_db', JSON.stringify(db));
 
-            if(jumlahTerupdate > 0) {
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                alert(`Berhasil! PR massal disalin ke ${jumlahTerupdate} jurnal meditasi milik "${document.getElementById('bulk-nama').value}".`);
-                document.getElementById('bulk-teks-pr').value = "";
-                renderTable();
-            } else {
-                alert("Tidak ditemukan data jurnal murid yang cocok pada rentang tanggal tersebut.");
-            }
+            alert(`Sukses! Target batin untuk "${namaTarget}" berhasil dikunci dari tanggal ${tglMulaiStr} s/d ${tglSelesaiStr}.\n\n(Mengubah ${terupdateJurnalLama} jurnal lama & siap terpasang otomatis untuk jurnal masa depan)`);
+            document.getElementById('bulk-teks-pr').value = "";
+            renderTable();
         }
 
         function bukaAksiEdit(id) {
