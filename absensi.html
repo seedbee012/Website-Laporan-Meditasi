@@ -3,153 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Absensi Matriks Meditasi (Juli - Agustus)</title>
+    <title>Rekap Absensi Meditasi</title>
+    <!-- Script Tailwind & html2pdf -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
-        .select-yes { background-color: #06b6d4 !important; color: #ffffff !important; font-weight: bold; }
-        .select-no { background-color: #f1f5f9 !important; color: #475569 !important; }
-        .sticky-col { position: sticky; left: 0; background-color: #f8fafc !important; border-right: 2px solid #cbd5e1 !important; z-index: 10; }
-        .custom-scrollbar::-webkit-scrollbar { height: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-8">
+<body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
 
-    <div class="max-w-full mx-auto bg-white rounded-2xl shadow-md border border-slate-100 p-4 sm:p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 animate-fade-in">
         
-        <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
-            <a href="index.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
-                ← Kembali ke Halaman Utama
+        <!-- NAVIGASI ATAS -->
+        <div class="mb-6 flex flex-wrap gap-3 justify-between items-center border-b border-slate-100 pb-4 no-print">
+            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">
+                ← Kembali ke Isi Jurnal
             </a>
-            <button id="btn-save-matrix" onclick="saveMatrixChanges()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer">
-                💾 Simpan Semua Perubahan Absensi
+            <a href="riwayat.html" class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-900 text-sm font-semibold transition-colors">
+                Lihat Jurnal Lengkap →
+            </a>
+        </div>
+
+        <!-- HEADER HALAMAN -->
+        <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Lembar Absensi Kehadiran Meditasi</h1>
+                <p class="text-sm text-slate-500 mt-1">Gunakan filter untuk menentukan tanggal atau periode absensi yang ingin dicetak.</p>
+            </div>
+            <!-- TOMBOL DOWNLOAD PDF ABSENSI -->
+            <button onclick="downloadPDFAbsensi()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer no-print">
+                Unduh Absensi (PDF) 📄
             </button>
         </div>
 
-        <div class="mb-6">
-            <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">📋 Tabel Kontrol Absensi (1 Juli - 31 Agustus)</h1>
-            <p id="access-notice" class="text-xs sm:text-sm text-slate-500 mt-1">Sistem sedang memuat hak akses...</p>
+        <!-- PANEL FILTER ABSENSI -->
+        <div class="bg-slate-50 rounded-xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
+            <div>
+                <label for="filter-nama" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cari Nama Murid</label>
+                <input type="text" id="filter-nama" oninput="renderAbsensi()" placeholder="Semua murid..." class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label for="filter-tgl-mulai" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Dari Tanggal</label>
+                <input type="date" id="filter-tgl-mulai" onchange="renderAbsensi()" class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label for="filter-tgl-selesai" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Sampai Tanggal</label>
+                <input type="date" id="filter-tgl-selesai" onchange="renderAbsensi()" class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
+            </div>
         </div>
 
-        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-xs custom-scrollbar">
-            <table class="w-full text-xs sm:text-sm text-left border-collapse">
-                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-20">
-                    <tr id="table-headers"></tr>
-                </thead>
-                <tbody id="table-matrix-rows" class="divide-y divide-slate-200 bg-white"></tbody>
-            </table>
+        <!-- AREA EXPORT PDF ABSENSI (Potrait Ringkas) -->
+        <div id="area-cetak-absensi" class="p-2">
+            <!-- Header Dokumen khusus cetakan -->
+            <div class="mb-4 text-center border-b-2 border-slate-900 pb-3">
+                <h2 class="text-xl font-bold text-slate-900 uppercase">Laporan Kehadiran Kelas Meditasi</h2>
+                <p id="pdf-periode-info" class="text-xs text-slate-600 font-medium mt-0.5">Semua Periode</p>
+            </div>
+
+            <!-- Ringkasan Singkat -->
+            <div class="mb-4 grid grid-cols-2 gap-4 bg-slate-50 rounded-lg p-3 text-xs border border-slate-100 font-medium">
+                <div>Total Jurnal Terisi: <span id="stat-total" class="font-bold text-slate-900">0</span> kali</div>
+                <div>Total Hadir Meditasi: <span id="stat-hadir" class="font-bold text-emerald-700">0</span> kali</div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left border-collapse bg-white text-sm">
+                    <thead>
+                        <tr class="bg-slate-900 text-white text-xs uppercase tracking-wider font-semibold">
+                            <th class="p-3">Tanggal</th>
+                            <th class="p-3">Nama Murid</th>
+                            <th class="p-3 text-center">Status Kehadiran</th>
+                            <th class="p-3">Keterangan Waktu (Jalan / Duduk)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="absensi-table-body" class="divide-y divide-slate-200 text-slate-700">
+                        <!-- Di-render otomatis lewat Javascript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-    </div>
+        <!-- STATE KOSONG -->
+        <div id="empty-state" class="text-center py-12 text-slate-400 font-medium hidden no-print">
+            🚫 Tidak ada data absensi untuk filter yang Anda pilih.
+        </div>
 
-    <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-950 text-white px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium z-50">
-        ✅ Perubahan absensi berhasil disimpan ke sistem!
     </div>
 
     <script>
-        const masterMurid = [
-            "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey", 
-            "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan", 
-            "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry", 
-            "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
-        ];
-        
-        const tanggalList = [];
-        for (let i = 1; i <= 31; i++) tanggalList.push(`2026-07-${i < 10 ? '0'+i : i}`);
+        function formatTanggal(stringTanggal) {
+            if(!stringTanggal) return '-';
+            const opsi = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(stringTanggal).toLocaleDateString('id-ID', opsi);
+        }
 
-        function renderMatrix() {
-            const role = localStorage.getItem('currentUserRole') || 'User';
+        function renderAbsensi() {
             const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            const tbody = document.getElementById('absensi-table-body');
+            const emptyState = document.getElementById('empty-state');
             
-            // Konfigurasi Notifikasi Hak Akses di Header Halaman
-            const notice = document.getElementById('access-notice');
-            const saveBtn = document.getElementById('btn-save-matrix');
-            
-            if(role === 'SukWan' || role === 'Titin') {
-                notice.innerText = `Mode Manajemen Aktif: Anda memiliki izin mengubah kotak kehadiran murid.`;
-                notice.className = "text-xs sm:text-sm text-blue-600 font-medium mt-1";
-                saveBtn.classList.remove('hidden');
+            const qNama = document.getElementById('filter-nama').value.toLowerCase().trim();
+            const tglMulai = document.getElementById('filter-tgl-mulai').value;
+            const tglSelesai = document.getElementById('filter-tgl-selesai').value;
+
+            // Update teks informasi periode untuk PDF
+            const pdfPeriode = document.getElementById('pdf-periode-info');
+            if(tglMulai && tglSelesai) {
+                pdfPeriode.innerText = `Periode: ${formatTanggal(tglMulai)} s/d ${formatTanggal(tglSelesai)}`;
+            } else if(tglMulai) {
+                pdfPeriode.innerText = `Sejak Tanggal: ${formatTanggal(tglMulai)}`;
+            } else if(tglSelesai) {
+                pdfPeriode.innerText = `Hingga Tanggal: ${formatTanggal(tglSelesai)}`;
             } else {
-                notice.innerText = "Mode Tinjauan: Anda tidak memiliki akses untuk mengubah absensi (Read-Only).";
-                notice.className = "text-xs sm:text-sm text-amber-600 font-medium mt-1";
-                saveBtn.classList.add('hidden');
+                pdfPeriode.innerText = "Semua Riwayat Periode Kehadiran";
             }
 
-            const headerRow = document.getElementById('table-headers');
-            const tbody = document.getElementById('table-matrix-rows');
-
-            let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama Murid</th>`;
-            tanggalList.forEach(tgl => {
-                const d = new Date(tgl);
-                headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}</th>`;
-            });
-            headerRow.innerHTML = headerHTML;
-
             tbody.innerHTML = '';
-            masterMurid.forEach(nama => {
+
+            // Filter Data
+            const filteredData = db.filter(item => {
+                const itemNama = (item.nama || '').toLowerCase().trim();
+                const matchNama = itemNama.includes(qNama);
+                
+                let matchTanggal = true;
+                if(tglMulai && item.tanggal < tglMulai) matchTanggal = false;
+                if(tglSelesai && item.tanggal > tglSelesai) matchTanggal = false;
+
+                return matchNama && matchTanggal;
+            });
+
+            // Urutkan berdasarkan tanggal terbaru
+            filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+            // Hitung statistik singkat
+            let totalIsi = filteredData.length;
+            let totalHadir = filteredData.filter(i => i.ikut_sesi === 'Ya').length;
+            document.getElementById('stat-total').innerText = totalIsi;
+            document.getElementById('stat-hadir').innerText = totalHadir;
+
+            if(filteredData.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filteredData.forEach(item => {
                 const tr = document.createElement('tr');
-                let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
+                tr.className = "hover:bg-slate-50 transition-colors text-xs sm:text-sm";
 
-                tanggalList.forEach(tgl => {
-                    const sudahIsiJurnal = db.some(item => item.tanggal === tgl && item.nama.toLowerCase().trim() === nama.toLowerCase().trim());
-                    const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-                    
-                    let status = sudahIsiJurnal ? "Yes" : "No";
-                    if (manualSaves[nama]) status = manualSaves[nama];
+                const isHadir = item.ikut_sesi === 'Ya';
+                const badgeStatus = isHadir 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">✓ HADIR</span>` 
+                    : `<span class="bg-rose-100 text-rose-800 text-xs px-2.5 py-0.5 rounded-full font-bold">𐄂 ABSEN</span>`;
 
-                    const selectClass = status === "Yes" ? "select-yes" : "select-no";
-                    
-                    // KUNCI DROPDOWN JIKA PENGGUNA BUKAN AUTHORIZED EDITOR/ADMIN
-                    const isDisabled = (role !== 'SukWan' && role !== 'Titin') ? 'disabled' : '';
+                // Gabungkan info waktu jalan dan duduk secara singkat
+                const infoWaktu = `Jalan: ${item.durasi_jalan || '-'} | Duduk: ${item.durasi_duduk || '-'}`;
 
-                    rowHTML += `
-                        <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
-                            <select data-nama="${nama}" data-tanggal="${tgl}" onchange="updateColors(this)" ${isDisabled}
-                                class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none font-semibold transition-all ${selectClass} disabled:opacity-90 disabled:cursor-not-allowed">
-                                <option value="Yes" ${status === 'Yes' ? 'selected' : ''}>Yes</option>
-                                <option value="No" ${status === 'No' ? 'selected' : ''}>No</option>
-                            </select>
-                        </td>
-                    `;
-                });
-
-                tr.innerHTML = rowHTML;
+                tr.innerHTML = `
+                    <td class="p-3 font-medium text-slate-900 whitespace-nowrap">${formatTanggal(item.tanggal)}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.nama || '-'}</td>
+                    <td class="p-3 text-center">${badgeStatus}</td>
+                    <td class="p-3 text-slate-500 text-xs font-mono">${infoWaktu}</td>
+                `;
                 tbody.appendChild(tr);
             });
         }
 
-        function updateColors(element) {
-            if (element.value === "Yes") {
-                element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none font-semibold transition-all select-yes";
-            } else {
-                element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none font-semibold transition-all select-no";
-            }
+        function downloadPDFAbsensi() {
+            const qNama = document.getElementById('filter-nama').value.trim() || "Semua_Murid";
+            const element = document.getElementById('area-cetak-absensi');
+            
+            const opsi = {
+                margin:       0.4,
+                filename:     `Laporan_Absensi_Meditasi_${qNama}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' } // Format tegak (portrait) agar rapi
+            };
+
+            html2pdf().set(opsi).from(element).save();
         }
 
-        function saveMatrixChanges() {
-            const dropdowns = document.querySelectorAll('select[data-nama]');
-            const dataPerTanggal = {};
-
-            dropdowns.forEach(select => {
-                const nama = select.getAttribute('data-nama');
-                const tgl = select.getAttribute('data-tanggal');
-                dataPerTanggal[tgl] = dataPerTanggal[tgl] || {};
-                dataPerTanggal[tgl][nama] = select.value;
-            });
-
-            for (const tgl in dataPerTanggal) {
-                localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
-            }
-
-            const toast = document.getElementById('toast');
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-            renderMatrix();
-        }
-
-        renderMatrix();
+        // Jalankan saat halaman dibuka
+        window.addEventListener('DOMContentLoaded', renderAbsensi);
     </script>
 </body>
 </html>
