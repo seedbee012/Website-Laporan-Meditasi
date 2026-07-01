@@ -17,6 +17,7 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
 
+    <!-- PANEL LOGIN ADMIN -->
     <div class="max-w-2xl mx-auto mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
         <div id="login-form-block" class="flex flex-wrap gap-3 items-end justify-between">
             <div class="grow grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -29,7 +30,8 @@
                     <input type="password" id="login-password" placeholder="••••••••" class="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-indigo-500">
                 </div>
             </div>
-            <button onclick="handleLogin()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2 rounded-lg cursor-pointer transition-colors">
+            <!-- Nama fungsi diubah menjadi prosesLogin() agar sesuai dengan JavaScript -->
+            <button onclick="prosesLogin()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2 rounded-lg cursor-pointer transition-colors">
                 Masuk
             </button>
         </div>
@@ -39,12 +41,13 @@
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span class="text-slate-600">Login sebagai: <strong id="user-display-name" class="text-slate-900"></strong></span>
             </div>
-            <button onclick="handleLogout()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
+            <button onclick="prosesLogout()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
                 Keluar
             </button>
         </div>
     </div>
 
+    <!-- AREA FORM UTAMA -->
     <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-10 animate-fade-in">
         
         <div class="mb-6 flex flex-wrap gap-2 justify-between items-center">
@@ -58,20 +61,21 @@
         </div>
 
         <div class="mb-8 text-center">
-            <h1 class="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">Laporan Meditasi Harian</h1>
+            <h1 id="form-title" class="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">Laporan Meditasi Harian</h1>
             <p id="role-indicator" class="mt-2 text-xs sm:text-sm text-emerald-600 font-medium">Mode: Pengguna Umum</p>
         </div>
 
-        <form id="meditationForm" class="space-y-6">
+        <!-- Submit form memanggil fungsi simpanJurnal -->
+        <form id="meditationForm" onsubmit="simpanJurnal(event)" class="space-y-6">
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="tanggal" class="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
-                    <input type="date" id="tanggal" name="tanggal" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500">
+                    <label for="input-tanggal" class="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
+                    <input type="date" id="input-tanggal" name="tanggal" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500">
                 </div>
                 <div>
-                    <label for="nama" class="block text-sm font-medium text-slate-700 mb-1.5">Nama</label>
-                    <input type="text" id="nama" name="nama" placeholder="Nama Anda" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500">
+                    <label for="input-nama" class="block text-sm font-medium text-slate-700 mb-1.5">Nama</label>
+                    <input type="text" id="input-nama" name="nama" placeholder="Nama Anda" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500">
                 </div>
             </div>
 
@@ -80,60 +84,63 @@
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Ikut sesi meditasi hari ini?</label>
                 <div class="flex gap-6">
-                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="ikut_sesi" value="Ya" required class="accent-emerald-600"> <span>Ya</span></label>
-                    <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="ikut_sesi" value="Tidak" class="accent-emerald-600"> <span>Tidak</span></label>
+                    <!-- id diatur sebagai input-sesi untuk memudahkan penarikan nilai -->
+                    <select id="input-sesi" name="ikut_sesi" required class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-emerald-500">
+                        <option value="Ya">Ya</option>
+                        <option value="Tidak">Tidak</option>
+                    </select>
                 </div>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <label for="durasi_jalan" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Jalan</label>
-                    <textarea id="durasi_jalan" name="durasi_jalan" rows="3" placeholder="Contoh: 10 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-jalan" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Jalan</label>
+                    <textarea id="input-jalan" name="durasi_jalan" rows="3" placeholder="Contoh: 10 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="durasi_duduk" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Duduk</label>
-                    <textarea id="durasi_duduk" name="durasi_duduk" rows="3" placeholder="Contoh: 30 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-duduk" class="block text-sm font-medium text-slate-700 mb-1">Durasi Meditasi Duduk</label>
+                    <textarea id="input-duduk" name="durasi_duduk" rows="3" placeholder="Contoh: 30 menit" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="frekuensi_wandering" class="block text-sm font-medium text-slate-700 mb-1">Frekuensi Wandering Mind</label>
-                    <textarea id="frekuensi_wandering" name="frekuensi_wandering" rows="3" placeholder="Contoh: 1-5 kali" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-wandering" class="block text-sm font-medium text-slate-700 mb-1">Frekuensi Wandering Mind</label>
+                    <textarea id="input-wandering" name="frekuensi_wandering" rows="3" placeholder="Contoh: 1-5 kali" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="kembali_cepat" class="block text-sm font-medium text-slate-700 mb-1">Saat menyadari pikiran mengembara, apakah dapat kembali konsentrasi ke napas dengan cepat?</label>
-                    <textarea id="kembali_cepat" name="kembali_cepat" rows="3" placeholder="Contoh: Ya, mudah/sulit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-cepat" class="block text-sm font-medium text-slate-700 mb-1">Saat menyadari pikiran mengembara, apakah dapat kembali konsentrasi ke napas dengan cepat?</label>
+                    <textarea id="input-cepat" name="kembali_cepat" rows="3" placeholder="Contoh: Ya, mudah/sulit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="durasi_hold" class="block text-sm font-medium text-slate-700 mb-1">Durasi bisa fokus pegang nafas tanpa gangguan(terlama dan terpendek)</label>
-                    <textarea id="durasi_hold" name="durasi_hold" rows="3" placeholder="Contoh: Terlama: 20 menit, terpendek: 10 menit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-hold" class="block text-sm font-medium text-slate-700 mb-1">Durasi bisa fokus pegang nafas tanpa gangguan(terlama dan terpendek)</label>
+                    <textarea id="input-hold" name="durasi_hold" rows="3" placeholder="Contoh: Terlama: 20 menit, terpendek: 10 menit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="durasi_halus" class="block text-sm font-medium text-slate-700 mb-1">Apakah ada nafas halus</label>
-                    <textarea id="durasi_halus" name="durasi_halus" rows="3" placeholder="Contoh: Ya, sekitar 10 menit/ tidak ada" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-halus" class="block text-sm font-medium text-slate-700 mb-1">Apakah ada nafas halus</label>
+                    <textarea id="input-halus" name="durasi_halus" rows="3" placeholder="Contoh: Ya, sekitar 10 menit/ tidak ada" class="w-full rounded-lg border border-slate-200 px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="muncul_cahaya" class="block text-sm font-medium text-slate-700 mb-1">Muncul Cahaya</label>
-                    <textarea id="muncul_cahaya" name="muncul_cahaya" rows="3" placeholder="Contoh: Tidak ada/Ya, sedikit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-cahaya" class="block text-sm font-medium text-slate-700 mb-1">Muncul Cahaya</label>
+                    <textarea id="input-cahaya" name="muncul_cahaya" rows="3" placeholder="Contoh: Tidak ada/Ya, sedikit" class="w-full rounded-lg border border-slate-200 px-4 py-4 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div>
-                    <label for="pengalaman" class="block text-sm font-medium text-slate-700 mb-1">Pengalaman / Pengamatan Kondisi Batin</label>
-                    <textarea id="pengalaman" name="pengalaman" rows="3" placeholder="Apa yang Anda rasakan selama meditasi?" class="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"></textarea>
+                    <label for="input-pengalaman" class="block text-sm font-medium text-slate-700 mb-1">Pengalaman / Pengamatan Kondisi Batin</label>
+                    <textarea id="input-pengalaman" name="pengalaman" rows="3" placeholder="Apa yang Anda rasakan selama meditasi?" class="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
                 <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-4">
-                    <label for="review_sharing" class="block text-sm font-medium text-indigo-900 mb-1">Review dari Ci Suk Wan saat Sesi Sharing</label>
-                    <textarea id="review_sharing" name="review_sharing" rows="2" placeholder="Tuliskan review/arahan dari Ci Suk Wan yang diberikan saat sesi sharing..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
+                    <label for="input-review" class="block text-sm font-medium text-indigo-900 mb-1">Review dari Ci Suk Wan saat Sesi Sharing</label>
+                    <textarea id="input-review" name="review_sharing" rows="2" placeholder="Tuliskan review/arahan dari Ci Suk Wan yang diberikan saat sesi sharing..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
                 </div>
             </div>
 
             <div class="pt-2">
-                <button type="submit" id="btn-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer">
+                <button type="submit" id="btn-simpan" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer">
                     Simpan Laporan Meditasi
                 </button>
             </div>
@@ -141,20 +148,16 @@
 
     </div>
 
-    <div id="toast" class="hidden fixed bottom-5 right-5 left-5 sm:left-auto sm:w-96 bg-slate-900 text-white px-5 py-4 rounded-xl shadow-lg flex items-center gap-3 transition-all z-50">
-        <div id="toast-text" class="text-sm font-medium">Aksi Berhasil!</div>
-    </div>
-
-<script>
+    <script>
         // 1. Fungsi mengambil Role
         function getRole() {
             return localStorage.getItem('currentUserRole') || 'User';
         }
 
-        // 2. Fungsi Login Admin Statis
+        // 2. Fungsi Login Admin Statis (Sudah disesuaikan ID elemennya)
         function prosesLogin() {
-            const email = document.getElementById('email-input').value.trim().toLowerCase();
-            const password = document.getElementById('password-input').value;
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
 
             if (email === 'sukwan@meditasi.com' && password === 'sukwan123') {
                 localStorage.setItem('currentUserRole', 'SukWan');
@@ -176,24 +179,23 @@
             window.location.href = 'index.html';
         }
 
-        // 4. Inisialisasi Tampilan & Cek Mode Edit Data (Koreksi)
+        // 4. Inisialisasi Tampilan & Cek Mode Edit Data
         window.addEventListener('DOMContentLoaded', () => {
             const role = getRole();
             const formTitle = document.getElementById('form-title');
             const btnSimpan = document.getElementById('btn-simpan');
-            const adminMenu = document.getElementById('admin-menu');
-            const loginPanel = document.getElementById('login-panel');
+            const roleIndicator = document.getElementById('role-indicator');
+            const loginFormBlock = document.getElementById('login-form-block');
+            const loginStatusBlock = document.getElementById('login-status-block');
+            const userDisplayName = document.getElementById('user-display-name');
 
-            // Atur visual panel atas jika status login aktif
+            // Atur visual panel atas berdasarkan status login
             if (role === 'SukWan' || role === 'Titin') {
-                if (adminMenu) adminMenu.classList.remove('hidden');
-                if (loginPanel) {
-                    loginPanel.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">Aktif: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}</span>
-                            <button onclick="prosesLogout()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs cursor-pointer transition-colors">Logout</button>
-                        </div>
-                    `;
+                if (roleIndicator) roleIndicator.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan (Guru)' : 'Ci Titin (Editor)'}`;
+                if (loginFormBlock) loginFormBlock.classList.add('hidden');
+                if (loginStatusBlock) {
+                    loginStatusBlock.classList.remove('hidden');
+                    if (userDisplayName) userDisplayName.innerText = role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin';
                 }
             }
 
@@ -222,14 +224,14 @@
                     if(document.getElementById('input-pengalaman')) document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
                     if(document.getElementById('input-review')) document.getElementById('input-review').value = dataLama.review_sharing || '';
                     
-                    // Proteksi nama & tanggal untuk user biasa agar tidak merusak absensi orang lain sewaktu mengedit
+                    // Proteksi nama & tanggal untuk user biasa saat mengedit
                     if (role === 'User') {
                         if(document.getElementById('input-nama')) document.getElementById('input-nama').disabled = true;
                         if(document.getElementById('input-tanggal')) document.getElementById('input-tanggal').disabled = true;
                     }
                 }
             } else {
-                // Jika input baru, isi otomatis kolom tanggal dengan hari ini agar praktis
+                // Jika input baru, isi otomatis kolom tanggal dengan hari ini
                 const hariIni = new Date().toISOString().split('T')[0];
                 if(document.getElementById('input-tanggal')) document.getElementById('input-tanggal').value = hariIni;
             }
@@ -239,7 +241,6 @@
         function simpanJurnal(event) {
             if(event) event.preventDefault();
 
-            // Jika input disabled saat edit, kodenya harus tetap bisa mengambil valuenya
             const nama = document.getElementById('input-nama').value.trim();
             const tanggal = document.getElementById('input-tanggal').value;
 
@@ -275,7 +276,6 @@
                 }
             } else {
                 // --- MODE INPUT DATA BARU ---
-                // Tempel otomatis target batin masa depan dari guru jika terdaftar
                 const targetDb = JSON.parse(localStorage.getItem('target_db')) || [];
                 const matchTarget = targetDb.find(t => t.nama.toLowerCase() === nama.toLowerCase() && t.tanggal === tanggal);
                 const prOtomatis = matchTarget ? matchTarget.pr_individu : "";
@@ -301,7 +301,8 @@
                 localStorage.setItem('meditasi_db', JSON.stringify(db));
                 alert("✅ Jurnal Meditasi Anda berhasil dikirim!");
                 
-                // Bersihkan field agar bisa dipakai murid lain secara bergantian
+                // Bersihkan field agar bisa dipakai murid lain
+                document.getElementById('input-nama').value = "";
                 document.getElementById('input-jalan').value = "";
                 document.getElementById('input-duduk').value = "";
                 document.getElementById('input-wandering').value = "";
