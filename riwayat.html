@@ -74,12 +74,33 @@
     </div>
 
     <script>
-        // 1. Ambil Role Aktif
+        // --- 1. PROSES PENYEDOTAN & GABUNG DATA LAMA (ANTI-HILANG) ---
+        (function migrasiDataOtomatis() {
+            const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
+            const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
+
+            if (dbLama1.length > 0 || dbLama2.length > 0) {
+                const mapGabung = new Map();
+                
+                dbLama1.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+                dbLama2.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+                dbUtama.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+
+                const hasilGabungan = Array.from(mapGabung.values());
+                localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
+                
+                localStorage.removeItem('jurnalMeditasiDB');
+                localStorage.removeItem('meditasi_entries');
+            }
+        })();
+
+        // 2. Ambil Role Aktif
         function getRole() {
             return localStorage.getItem('currentUserRole') || 'User';
         }
 
-        // 2. Fungsi Render Riwayat Format Tabel
+        // 3. Fungsi Render Riwayat Format Tabel
         function renderRiwayat() {
             const role = getRole();
             const tbody = document.getElementById('tbody-riwayat');
@@ -144,8 +165,9 @@
             let htmlRows = '';
             dataTampil.forEach(item => {
                 
-                // Badge Sesi Meditasi
-                const badgeSesi = item.ikut_sesi === 'Ya' 
+                // PENYELARASAN: Mendukung penulisan badge "Ya" maupun "Yes" secara fleksibel
+                const isIkut = (item.ikut_sesi === 'Ya' || item.ikut_sesi === 'Yes');
+                const badgeSesi = isIkut 
                     ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-medium">Ya</span>`
                     : `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-medium">Tidak</span>`;
 
@@ -190,12 +212,12 @@
             tbody.innerHTML = htmlRows;
         }
 
-        // 3. Pindah ke halaman utama untuk edit data bawa ID
+        // 4. Pindah ke halaman utama untuk edit data bawa ID
         function bukaHalamanEdit(id) {
             window.location.href = `index.html?editId=${id}`;
         }
 
-        // 4. Inisialisasi awal saat render halaman dilakukan
+        // 5. Inisialisasi awal saat render halaman dilakukan
         window.addEventListener('DOMContentLoaded', renderRiwayat);
     </script>
 </body>
