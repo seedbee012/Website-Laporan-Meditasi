@@ -86,7 +86,7 @@
     doc,
     deleteDoc
 } from "./firebase.js";
-        
+console.log("riwayat.js loaded");
         (function migrasiDataOtomatis() {
             const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
             const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
@@ -241,8 +241,11 @@ async function hapusLaporan(id) {
             "❌ Gagal menghapus laporan."
         );
     }
-}
-        window.addEventListener('DOMContentLoaded', renderRiwayat);
+};
+        window.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded fired");
+    renderRiwayat();
+});
         window.bukaHalamanEdit = bukaHalamanEdit;
         window.hapusLaporan = hapusLaporan;
     </script>
