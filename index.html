@@ -128,13 +128,11 @@
                     <textarea id="input-pengalaman" name="pengalaman" rows="3" placeholder="Apa yang Anda rasakan selama meditasi?" class="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
-                <!-- Review saat Sesi Sharing: Bisa diisi manual oleh semua orang -->
                 <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-4">
                     <label for="input-review" class="block text-sm font-medium text-indigo-900 mb-1">Review dari Ci Suk Wan saat Sesi Sharing</label>
                     <textarea id="input-review" name="review_sharing" rows="2" placeholder="Tuliskan review/arahan dari Ci Suk Wan yang diberikan saat sesi sharing..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
                 </div>
 
-                <!-- PR/Target Individu: Tetap dikunci untuk non-admin -->
                 <div class="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4">
                     <label for="input-pr" class="block text-sm font-medium text-emerald-900 mb-1">PR/Target Individu (Ci Suk Wan yg Isi)</label>
                     <textarea id="input-pr" name="pr_individu" rows="2" placeholder="Hanya bisa diisi/diedit oleh Ci Suk Wan..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
@@ -150,7 +148,9 @@
     </div>
 
     <script>
-        function getRole() { return localStorage.getItem('currentUserRole') || 'User'; }
+        function getRole() {
+            return localStorage.getItem('currentUserRole') || 'User';
+        }
 
         function prosesLogin() {
             const email = document.getElementById('login-email').value.trim().toLowerCase();
@@ -159,11 +159,11 @@
             if (email === 'sukwan@meditasi.com' && password === 'sukwan123') {
                 localStorage.setItem('currentUserRole', 'SukWan');
                 alert("✅ Selamat datang Ci Suk Wan (Guru)!");
-                window.location.reload(); 
+                window.location.reload();
             } else if (email === 'titin@meditasi.com' && password === 'titin123') {
                 localStorage.setItem('currentUserRole', 'Titin');
                 alert("✅ Selamat datang Ci Titin (Editor)!");
-                window.location.reload(); 
+                window.location.reload();
             } else {
                 alert("❌ Email atau Password Admin salah.");
             }
@@ -188,32 +188,31 @@
                     loginStatusBlock.classList.remove('hidden');
                     userDisplayName.innerText = role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin';
                 }
-                if (roleIndicator) roleIndicator.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan (Guru)' : 'Ci Titin (Editor)'}`;
+                if (roleIndicator) {
+                    roleIndicator.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan (Guru)' : 'Ci Titin (Editor)'}`;
+                }
             }
 
-            // Memastikan kolom "Review" AKTIF untuk semua orang
             document.getElementById('input-review').disabled = false;
 
-            // Kontrol Hak Akses Pengisian PR/Target Individu
             if (role === 'User' || role === 'Titin') {
                 document.getElementById('input-pr').disabled = true;
             }
 
-            // CEK MODE EDIT (KOREKSI)
             const urlParams = new URLSearchParams(window.location.search);
             const editId = urlParams.get('editId');
+
             if (editId) {
                 document.getElementById('form-title').innerText = "Koreksi / Edit Jurnal Meditasi 📝";
                 document.getElementById('btn-simpan').innerText = "Simpan Perubahan 💾";
-                
+
                 const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
                 const dataLama = db.find(item => item.id == editId);
 
                 if (dataLama) {
                     document.getElementById('input-nama').value = dataLama.nama || '';
                     document.getElementById('input-tanggal').value = dataLama.tanggal || '';
-                    
-                    // Kembalikan ke pilihan 'Ya' atau 'Tidak' saat proses edit form
+
                     if (dataLama.ikut_sesi === 'Yes') {
                         document.getElementById('input-sesi').value = 'Ya';
                     } else if (dataLama.ikut_sesi === 'No') {
@@ -232,7 +231,7 @@
                     document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
                     document.getElementById('input-review').value = dataLama.review_sharing || '';
                     document.getElementById('input-pr').value = dataLama.pr_individu || '';
-                    
+
                     if (role === 'User') {
                         document.getElementById('input-nama').disabled = true;
                         document.getElementById('input-tanggal').disabled = true;
@@ -245,11 +244,10 @@
 
         function simpanJurnal(event) {
             event.preventDefault();
+
             const nama = document.getElementById('input-nama').value.trim();
             const tanggal = document.getElementById('input-tanggal').value;
             const role = getRole();
-
-            // LOGIKA OTOMATIS: Mengubah opsi "Ya" menjadi "Yes" dan "Tidak" menjadi "No"
             const pilihanSesi = document.getElementById('input-sesi').value;
             const statusAbsensi = (pilihanSesi === 'Ya') ? 'Yes' : 'No';
 
@@ -259,12 +257,14 @@
 
             if (editId) {
                 const idx = db.findIndex(item => item.id == editId);
+
                 if (idx !== -1) {
                     if (role !== 'User') {
                         db[idx].nama = nama;
                         db[idx].tanggal = tanggal;
                     }
-                    db[idx].ikut_sesi = statusAbsensi; // Tersimpan otomatis sebagai Yes / No
+
+                    db[idx].ikut_sesi = statusAbsensi;
                     db[idx].durasi_jalan = document.getElementById('input-jalan').value;
                     db[idx].durasi_duduk = document.getElementById('input-duduk').value;
                     db[idx].frekuensi_wandering = document.getElementById('input-wandering').value;
@@ -273,8 +273,8 @@
                     db[idx].durasi_halus = document.getElementById('input-halus').value;
                     db[idx].muncul_cahaya = document.getElementById('input-cahaya').value;
                     db[idx].pengalaman = document.getElementById('input-pengalaman').value;
-                    db[idx].review_sharing = document.getElementById('input-review').value; 
-                    
+                    db[idx].review_sharing = document.getElementById('input-review').value;
+
                     if (role === 'SukWan') {
                         db[idx].pr_individu = document.getElementById('input-pr').value;
                     }
@@ -288,18 +288,19 @@
                     id: Date.now(),
                     nama: nama,
                     tanggal: tanggal,
-                    ikut_sesi: statusAbsensi, // Tersimpan otomatis sebagai Yes / No ke absensi.html
-                    durasi_jalan: document.getElementById('input-jalan').value;
-                    durasi_duduk: document.getElementById('input-duduk').value;
-                    frekuensi_wandering: document.getElementById('input-wandering').value;
-                    kembali_cepat: document.getElementById('input-cepat').value;
-                    durasi_hold: document.getElementById('input-hold').value;
-                    durasi_halus: document.getElementById('input-halus').value;
-                    muncul_cahaya: document.getElementById('input-cahaya').value;
-                    pengalaman: document.getElementById('input-pengalaman').value;
-                    review_sharing: document.getElementById('input-review').value, 
+                    ikut_sesi: statusAbsensi,
+                    durasi_jalan: document.getElementById('input-jalan').value,
+                    durasi_duduk: document.getElementById('input-duduk').value,
+                    frekuensi_wandering: document.getElementById('input-wandering').value,
+                    kembali_cepat: document.getElementById('input-cepat').value,
+                    durasi_hold: document.getElementById('input-hold').value,
+                    durasi_halus: document.getElementById('input-halus').value,
+                    muncul_cahaya: document.getElementById('input-cahaya').value,
+                    pengalaman: document.getElementById('input-pengalaman').value,
+                    review_sharing: document.getElementById('input-review').value,
                     pr_individu: role === 'SukWan' ? document.getElementById('input-pr').value : ""
                 };
+
                 db.push(jurnalBaru);
                 localStorage.setItem('meditasi_db', JSON.stringify(db));
                 alert("✅ Jurnal Berhasil Dikirim!");
