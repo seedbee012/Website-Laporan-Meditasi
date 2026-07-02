@@ -60,19 +60,23 @@
                 <tbody id="tbody-riwayat" class="divide-y divide-slate-200 text-slate-600"></tbody>
             </table>
         </div>
-<div class="flex gap-1 justify-center">
-    <button
-        onclick="bukaHalamanEdit('${item.firestoreId}')"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
-        Edit 📝
-    </button>
+<td class="p-3 text-center sticky right-0 bg-white">
+    <div class="flex gap-1 justify-center">
 
-    <button
-        onclick="hapusLaporan('${item.firestoreId}')"
-        class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
-        Hapus 🗑️
-    </button>
-</div>
+        <button
+            onclick="bukaHalamanEdit('${item.firestoreId}')"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
+            Edit 📝
+        </button>
+
+        <button
+            onclick="hapusLaporan('${item.firestoreId}')"
+            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
+            Hapus 🗑️
+        </button>
+
+    </div>
+</td>
         <div id="empty-state" class="hidden text-center py-12 border-2 border-dashed border-slate-200 rounded-b-xl bg-slate-50/30">
             <p id="empty-text" class="text-sm text-slate-500 font-medium">Tidak ada data untuk ditampilkan.</p>
         </div>
@@ -126,19 +130,33 @@ async function renderRiwayat() {
             const keteranganAkses = document.getElementById('keterangan-akses');
             const adminFilterBox = document.getElementById('admin-filter-box');
             const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
-const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-console.log("Documents found:", snapshot.size);
-console.log(snapshot.size);
-const dataFirebase = [];
 
-snapshot.forEach((docSnap) => {
-    dataFirebase.push({
-        firestoreId: docSnap.id,
-        ...docSnap.data()
+let dataFirebase = [];
+
+try {
+
+    const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+
+    console.log("Documents found:", snapshot.size);
+
+    snapshot.forEach((docSnap) => {
+        dataFirebase.push({
+            firestoreId: docSnap.id,
+            ...docSnap.data()
+        });
     });
-});
 
-console.table(dataFirebase);
+    console.table(dataFirebase);
+
+} catch (error) {
+
+    console.error("Firebase Error:", error);
+
+    alert("❌ Gagal mengambil data dari Firebase.");
+
+    return;
+}
+    
     if (role === 'SukWan' || role === 'Titin') {
                 statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
                 keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
@@ -154,7 +172,9 @@ console.table(dataFirebase);
             let dataTampil = [];
 
             if (role === 'SukWan' || role === 'Titin') {
-                dataTampil = searchNama ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama)) : db;
+                dataTampil = searchNama
+                ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama))
+                : dataFirebase;
             } else {
                 if (searchNama !== '') {
                     dataTampil = dataFirebase.filter(item => normalizeText(item.nama) === searchNama);
@@ -166,9 +186,7 @@ console.table(dataFirebase);
                 }
             }
 
-            dataTampil.sort((a, b) => {
-    return (b.tanggal || "").localeCompare(a.tanggal || "");
-});
+            dataTampil.sort((a, b) => (b.id || 0) - (a.id || 0));
 
             if (dataTampil.length === 0) {
                 tbody.innerHTML = '';
@@ -202,7 +220,7 @@ console.table(dataFirebase);
                         <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
                         <td class="p-3 text-xs bg-emerald-50/30 text-emerald-950 whitespace-pre-line font-medium border-l border-emerald-100">${item.pr_individu || 'Belum ada PR.'}</td>
                         <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
-                            <button onclick="bukaHalamanEdit(${item.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer">
+                            <button onclick="bukaHalamanEdit('${item.firestoreId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer">
                                 Edit 📝
                             </button>
                         </td>
