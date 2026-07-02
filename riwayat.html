@@ -132,15 +132,14 @@ console.log(snapshot.size);
 const dataFirebase = [];
 
 snapshot.forEach((docSnap) => {
-    console.log(dataFirebase);
     dataFirebase.push({
         firestoreId: docSnap.id,
         ...docSnap.data()
     });
 });
-    console.log(dataFirebase);
 
-            if (role === 'SukWan' || role === 'Titin') {
+console.log(dataFirebase);
+    if (role === 'SukWan' || role === 'Titin') {
                 statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
                 keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
                 adminFilterBox.classList.remove('hidden');
@@ -167,7 +166,9 @@ snapshot.forEach((docSnap) => {
                 }
             }
 
-            dataTampil.sort((a, b) => (b.id || 0) - (a.id || 0));
+            dataTampil.sort((a, b) => {
+    return (b.tanggal || "").localeCompare(a.tanggal || "");
+});
 
             if (dataTampil.length === 0) {
                 tbody.innerHTML = '';
@@ -225,13 +226,13 @@ async function hapusLaporan(id) {
 
     try {
 
-        await deleteDoc(
-            doc(db, "laporanMeditasi", id)
-        );
+await deleteDoc(
+    doc(db, "laporanMeditasi", id)
+);
 
-        alert("✅ Laporan berhasil dihapus!");
+await renderRiwayat();
 
-        renderRiwayat();
+alert("✅ Laporan berhasil dihapus!");
 
     } catch (error) {
 
@@ -242,12 +243,11 @@ async function hapusLaporan(id) {
         );
     }
 };
-        window.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded fired");
-    renderRiwayat();
-});
-        window.bukaHalamanEdit = bukaHalamanEdit;
-        window.hapusLaporan = hapusLaporan;
+window.addEventListener('DOMContentLoaded', renderRiwayat);
+
+window.renderRiwayat = renderRiwayat;
+window.bukaHalamanEdit = bukaHalamanEdit;
+window.hapusLaporan = hapusLaporan;
     </script>
 </body>
 </html>
