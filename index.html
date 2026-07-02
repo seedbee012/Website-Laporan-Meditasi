@@ -30,7 +30,6 @@
                     <input type="password" id="login-password" placeholder="••••••••" class="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-indigo-500">
                 </div>
             </div>
-            <!-- Nama fungsi diubah menjadi prosesLogin() agar sesuai dengan JavaScript -->
             <button onclick="prosesLogin()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2 rounded-lg cursor-pointer transition-colors">
                 Masuk
             </button>
@@ -54,7 +53,6 @@
             <a href="riwayat.html" class="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-md cursor-pointer">
                 🔍 Buka Lembar Riwayat Laporan →
             </a>
-            
             <a href="absensi.html" class="inline-flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors border border-indigo-100 cursor-pointer">
                 📊 Absensi →
             </a>
@@ -62,12 +60,10 @@
 
         <div class="mb-8 text-center">
             <h1 id="form-title" class="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">Laporan Meditasi Harian</h1>
-            <p id="role-indicator" class="mt-2 text-xs sm:text-sm text-emerald-600 font-medium">Mode: Pengguna Umum</p>
+            <p id="role-indicator" class="mt-2 text-xs sm:text-sm text-slate-500 font-medium">Mode: Pengguna Umum</p>
         </div>
 
-        <!-- Submit form memanggil fungsi simpanJurnal -->
         <form id="meditationForm" onsubmit="simpanJurnal(event)" class="space-y-6">
-            
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="input-tanggal" class="block text-sm font-medium text-slate-700 mb-1.5">Tanggal</label>
@@ -84,7 +80,6 @@
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Ikut sesi meditasi hari ini?</label>
                 <div class="flex gap-6">
-                    <!-- id diatur sebagai input-sesi untuk memudahkan penarikan nilai -->
                     <select id="input-sesi" name="ikut_sesi" required class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-emerald-500">
                         <option value="Ya">Ya</option>
                         <option value="Tidak">Tidak</option>
@@ -133,159 +128,185 @@
                     <textarea id="input-pengalaman" name="pengalaman" rows="3" placeholder="Apa yang Anda rasakan selama meditasi?" class="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm outline-none focus:border-emerald-500"></textarea>
                 </div>
 
+                <!-- Review saat Sesi Sharing: Bisa diisi manual oleh semua orang -->
                 <div class="bg-indigo-50/40 border border-indigo-100 rounded-xl p-4">
                     <label for="input-review" class="block text-sm font-medium text-indigo-900 mb-1">Review dari Ci Suk Wan saat Sesi Sharing</label>
                     <textarea id="input-review" name="review_sharing" rows="2" placeholder="Tuliskan review/arahan dari Ci Suk Wan yang diberikan saat sesi sharing..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
                 </div>
+
+                <!-- PR/Target Individu: Tetap dikunci untuk non-admin -->
+                <div class="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4">
+                    <label for="input-pr" class="block text-sm font-medium text-emerald-900 mb-1">PR/Target Individu (Ci Suk Wan yg Isi)</label>
+                    <textarea id="input-pr" name="pr_individu" rows="2" placeholder="Hanya bisa diisi/diedit oleh Ci Suk Wan..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
+                </div>
             </div>
 
             <div class="pt-2">
-                <button type="submit" id="btn-simpan" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm active:scale-[0.99] transition-all cursor-pointer">
+                <button type="submit" id="btn-simpan" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-all cursor-pointer">
                     Simpan Laporan Meditasi
                 </button>
             </div>
         </form>
-
     </div>
 
-<script>
-        let editingId = null;
-        document.getElementById('tanggal').valueAsDate = new Date();
+    <script>
+        function getRole() { return localStorage.getItem('currentUserRole') || 'User'; }
 
-        function handleLogin() {
-            const email = document.getElementById('login-email').value.trim();
-            const pass = document.getElementById('login-password').value;
-            if(email === 'sukwan@meditasi.com' && pass === 'sukwan123') {
+        function prosesLogin() {
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+
+            if (email === 'sukwan@meditasi.com' && password === 'sukwan123') {
                 localStorage.setItem('currentUserRole', 'SukWan');
-                showToast("Selamat datang Ci Suk Wan!");
-            } else if(email === 'titin@meditasi.com' && pass === 'titin123') {
+                alert("✅ Selamat datang Ci Suk Wan (Guru)!");
+                window.location.reload(); 
+            } else if (email === 'titin@meditasi.com' && password === 'titin123') {
                 localStorage.setItem('currentUserRole', 'Titin');
-                showToast("Selamat datang Ci Titin!");
-            } else { showToast("Email atau Password salah!"); return; }
-            applyRoleSecurity();
+                alert("✅ Selamat datang Ci Titin (Editor)!");
+                window.location.reload(); 
+            } else {
+                alert("❌ Email atau Password Admin salah.");
+            }
         }
 
-        function handleLogout() {
-            localStorage.setItem('currentUserRole', 'User');
-            showToast("Anda telah keluar.");
-            applyRoleSecurity();
+        function prosesLogout() {
+            localStorage.removeItem('currentUserRole');
+            alert("Keluar berhasil. Mode berganti ke Pengguna Umum.");
+            window.location.href = 'index.html';
         }
 
-        function applyRoleSecurity() {
-            const role = localStorage.getItem('currentUserRole') || 'User';
-            const formBlock = document.getElementById('login-form-block');
-            const statusBlock = document.getElementById('login-status-block');
-            const displayName = document.getElementById('user-display-name');
+        window.addEventListener('DOMContentLoaded', () => {
+            const role = getRole();
+            const loginFormBlock = document.getElementById('login-form-block');
+            const loginStatusBlock = document.getElementById('login-status-block');
+            const userDisplayName = document.getElementById('user-display-name');
             const roleIndicator = document.getElementById('role-indicator');
-            const btnSubmit = document.getElementById('btn-submit');
 
-            if(role === 'User') {
-                formBlock.classList.remove('hidden');
-                statusBlock.classList.add('hidden');
-                roleIndicator.innerText = "Mode: Pengguna Umum";
-                roleIndicator.className = "mt-2 text-xs sm:text-sm text-emerald-600 font-medium";
-                btnSubmit.innerText = "Simpan Jurnal Meditasi";
-            } else {
-                formBlock.classList.add('hidden');
-                statusBlock.classList.remove('hidden');
-                displayName.innerText = role === 'SukWan' ? "Ci Suk Wan" : "Ci Titin";
-                roleIndicator.innerText = `Mode: ${role}`;
-                btnSubmit.innerText = "Simpan Perubahan Jurnal";
-            }
-        }
-
-        document.getElementById('meditationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            
-            const inputNama = document.getElementById('nama').value.trim();
-            const inputTanggal = document.getElementById('tanggal').value;
-
-            // --- SISTEM AUTO-DETEKSI TARGET BARU ---
-            let assignedPr = "";
-            if (editingId) {
-                // Jika sedang mengedit data yang sudah ada, pertahankan PR lamanya
-                const oldItem = db.find(i => i.id === editingId);
-                if (oldItem && oldItem.pr_individu) assignedPr = oldItem.pr_individu;
-            } else {
-                // Jika membuat jurnal BARU, otomatis cari apakah Ci Suk Wan sudah membuat master plan target untuk tanggal & nama ini
-                const targetDb = JSON.parse(localStorage.getItem('target_db')) || [];
-                const matchedTarget = targetDb.find(t => 
-                    t.nama.toLowerCase() === inputNama.toLowerCase() && 
-                    t.tanggal === inputTanggal
-                );
-                if (matchedTarget) {
-                    assignedPr = matchedTarget.pr_individu;
+            if (role === 'SukWan' || role === 'Titin') {
+                if (loginFormBlock) loginFormBlock.classList.add('hidden');
+                if (loginStatusBlock) {
+                    loginStatusBlock.classList.remove('hidden');
+                    userDisplayName.innerText = role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin';
                 }
+                if (roleIndicator) roleIndicator.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan (Guru)' : 'Ci Titin (Editor)'}`;
             }
 
-            const formData = {
-                id: editingId || Date.now(),
-                tanggal: inputTanggal,
-                nama: inputNama,
-                ikut_sesi: document.querySelector('input[name="ikut_sesi"]:checked').value,
-                durasi_duduk: document.getElementById('durasi_duduk').value,
-                durasi_jalan: document.getElementById('durasi_jalan').value,
-                frekuensi_wandering: document.getElementById('frekuensi_wandering').value,
-                kembali_cepat: document.getElementById('kembali_cepat').value,
-                durasi_hold: document.getElementById('durasi_hold').value,
-                durasi_halus: document.getElementById('durasi_halus').value,
-                muncul_cahaya: document.getElementById('muncul_cahaya').value,
-                pengalaman: document.getElementById('pengalaman').value,
-                review_sharing: document.getElementById('review_sharing').value,
-                pr_individu: assignedPr // Target batin masuk otomatis ke sini!
-            };
+            // Memastikan kolom "Review" AKTIF untuk semua orang
+            document.getElementById('input-review').disabled = false;
 
-            if (editingId) {
-                const idx = db.findIndex(i => i.id === editingId);
-                if (idx !== -1) db[idx] = formData;
-                editingId = null;
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                alert("Berhasil disimpan! Mengembalikan ke Riwayat.");
-                window.location.href = 'riwayat.html';
-            } else {
-                db.push(formData);
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                this.reset();
-                document.getElementById('tanggal').valueAsDate = new Date();
-                showToast("Jurnal berhasil disimpan!" + (assignedPr ? " (Target PR Otomatis Terpasang ✨)" : ""));
+            // Kontrol Hak Akses Pengisian PR/Target Individu
+            if (role === 'User' || role === 'Titin') {
+                document.getElementById('input-pr').disabled = true;
             }
-        });
 
-        function checkForIncomingEdit() {
+            // CEK MODE EDIT (KOREKSI)
             const urlParams = new URLSearchParams(window.location.search);
             const editId = urlParams.get('editId');
             if (editId) {
+                document.getElementById('form-title').innerText = "Koreksi / Edit Jurnal Meditasi 📝";
+                document.getElementById('btn-simpan').innerText = "Simpan Perubahan 💾";
+                
                 const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-                const item = db.find(i => i.id == editId);
-                if (item) {
-                    editingId = parseInt(editId);
-                    document.getElementById('tanggal').value = item.tanggal;
-                    document.getElementById('nama').value = item.nama;
-                    document.querySelector(`input[name="ikut_sesi"][value="${item.ikut_sesi}"]`).checked = true;
-                    document.getElementById('durasi_duduk').value = item.durasi_duduk;
-                    document.getElementById('durasi_jalan').value = item.durasi_jalan;
-                    document.getElementById('frekuensi_wandering').value = item.frekuensi_wandering;
-                    document.getElementById('kembali_cepat').value = item.kembali_cepat;
-                    document.getElementById('durasi_hold').value = item.durasi_hold;
-                    document.getElementById('durasi_halus').value = item.durasi_halus;
-                    document.getElementById('muncul_cahaya').value = item.muncul_cahaya || '';
-                    document.getElementById('pengalaman').value = item.pengalaman;
-                    document.getElementById('review_sharing').value = item.review_sharing || '';
-                    document.getElementById('review_sharing').focus();
+                const dataLama = db.find(item => item.id == editId);
+
+                if (dataLama) {
+                    document.getElementById('input-nama').value = dataLama.nama || '';
+                    document.getElementById('input-tanggal').value = dataLama.tanggal || '';
+                    
+                    // Kembalikan ke pilihan 'Ya' atau 'Tidak' saat proses edit form
+                    if (dataLama.ikut_sesi === 'Yes') {
+                        document.getElementById('input-sesi').value = 'Ya';
+                    } else if (dataLama.ikut_sesi === 'No') {
+                        document.getElementById('input-sesi').value = 'Tidak';
+                    } else {
+                        document.getElementById('input-sesi').value = dataLama.ikut_sesi || 'Ya';
+                    }
+
+                    document.getElementById('input-jalan').value = dataLama.durasi_jalan || '';
+                    document.getElementById('input-duduk').value = dataLama.durasi_duduk || '';
+                    document.getElementById('input-wandering').value = dataLama.frekuensi_wandering || '';
+                    document.getElementById('input-cepat').value = dataLama.kembali_cepat || '';
+                    document.getElementById('input-hold').value = dataLama.durasi_hold || '';
+                    document.getElementById('input-halus').value = dataLama.durasi_halus || '';
+                    document.getElementById('input-cahaya').value = dataLama.muncul_cahaya || '';
+                    document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
+                    document.getElementById('input-review').value = dataLama.review_sharing || '';
+                    document.getElementById('input-pr').value = dataLama.pr_individu || '';
+                    
+                    if (role === 'User') {
+                        document.getElementById('input-nama').disabled = true;
+                        document.getElementById('input-tanggal').disabled = true;
+                    }
                 }
+            } else {
+                document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
+            }
+        });
+
+        function simpanJurnal(event) {
+            event.preventDefault();
+            const nama = document.getElementById('input-nama').value.trim();
+            const tanggal = document.getElementById('input-tanggal').value;
+            const role = getRole();
+
+            // LOGIKA OTOMATIS: Mengubah opsi "Ya" menjadi "Yes" dan "Tidak" menjadi "No"
+            const pilihanSesi = document.getElementById('input-sesi').value;
+            const statusAbsensi = (pilihanSesi === 'Ya') ? 'Yes' : 'No';
+
+            let db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('editId');
+
+            if (editId) {
+                const idx = db.findIndex(item => item.id == editId);
+                if (idx !== -1) {
+                    if (role !== 'User') {
+                        db[idx].nama = nama;
+                        db[idx].tanggal = tanggal;
+                    }
+                    db[idx].ikut_sesi = statusAbsensi; // Tersimpan otomatis sebagai Yes / No
+                    db[idx].durasi_jalan = document.getElementById('input-jalan').value;
+                    db[idx].durasi_duduk = document.getElementById('input-duduk').value;
+                    db[idx].frekuensi_wandering = document.getElementById('input-wandering').value;
+                    db[idx].kembali_cepat = document.getElementById('input-cepat').value;
+                    db[idx].durasi_hold = document.getElementById('input-hold').value;
+                    db[idx].durasi_halus = document.getElementById('input-halus').value;
+                    db[idx].muncul_cahaya = document.getElementById('input-cahaya').value;
+                    db[idx].pengalaman = document.getElementById('input-pengalaman').value;
+                    db[idx].review_sharing = document.getElementById('input-review').value; 
+                    
+                    if (role === 'SukWan') {
+                        db[idx].pr_individu = document.getElementById('input-pr').value;
+                    }
+
+                    localStorage.setItem('meditasi_db', JSON.stringify(db));
+                    alert("✅ Perubahan Berhasil Disimpan!");
+                    window.location.href = 'riwayat.html';
+                }
+            } else {
+                const jurnalBaru = {
+                    id: Date.now(),
+                    nama: nama,
+                    tanggal: tanggal,
+                    ikut_sesi: statusAbsensi, // Tersimpan otomatis sebagai Yes / No ke absensi.html
+                    durasi_jalan: document.getElementById('input-jalan').value;
+                    durasi_duduk: document.getElementById('input-duduk').value;
+                    frekuensi_wandering: document.getElementById('input-wandering').value;
+                    kembali_cepat: document.getElementById('input-cepat').value;
+                    durasi_hold: document.getElementById('input-hold').value;
+                    durasi_halus: document.getElementById('input-halus').value;
+                    muncul_cahaya: document.getElementById('input-cahaya').value;
+                    pengalaman: document.getElementById('input-pengalaman').value;
+                    review_sharing: document.getElementById('input-review').value, 
+                    pr_individu: role === 'SukWan' ? document.getElementById('input-pr').value : ""
+                };
+                db.push(jurnalBaru);
+                localStorage.setItem('meditasi_db', JSON.stringify(db));
+                alert("✅ Jurnal Berhasil Dikirim!");
+                document.getElementById('meditationForm').reset();
+                document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
             }
         }
-
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-text').innerText = m;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
-        applyRoleSecurity();
-        checkForIncomingEdit();
     </script>
 </body>
 </html>
