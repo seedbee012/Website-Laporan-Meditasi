@@ -83,12 +83,13 @@
     </div>
 
     <script type="module">
-        import {
-    db,
-    collection,
-    getDocs,
-    doc,
-    deleteDoc
+import {
+db,
+collection,
+getDocs,
+doc,
+deleteDoc,
+updateDoc
 } from "./firebase.js";
 console.log("riwayat.js loaded");
         (function migrasiDataOtomatis() {
@@ -218,7 +219,34 @@ try {
                         <td class="p-3 text-xs whitespace-pre-line">${item.muncul_cahaya || '-'}</td>
                         <td class="p-3 text-xs italic text-slate-500 whitespace-pre-line">"${item.pengalaman || '-'}"</td>
                         <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
-                        <td class="p-3 text-xs bg-emerald-50/30 text-emerald-950 whitespace-pre-line font-medium border-l border-emerald-100">${item.pr_individu || 'Belum ada PR.'}</td>
+                        <td class="p-3 bg-emerald-50/30 border-l border-emerald-100">
+                        
+                        ${
+                        (role === "SukWan" || role === "Titin")
+                        ?
+                        
+                        `
+                        <textarea
+                        id="pr-${item.firestoreId}"
+                        class="w-full border rounded p-2 text-xs"
+                        rows="3">${item.pr_individu || ""}</textarea>
+                        
+                        <button
+                        onclick="simpanPR('${item.firestoreId}')"
+                        class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded">
+                        💾 Simpan
+                        </button>
+                        `
+                        
+                        :
+                        
+                        `<div class="text-xs whitespace-pre-line font-medium">
+                        ${item.pr_individu || "Belum ada PR."}
+                        </div>`
+                        
+                        }
+                        
+                        </td>
 <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
     <div class="flex gap-2 justify-center">
 
@@ -272,6 +300,31 @@ alert("✅ Laporan berhasil dihapus!");
         );
     }
 };
+
+async function simpanPR(firestoreId){
+
+    const isi = document.getElementById(`pr-${firestoreId}`).value;
+
+    try{
+
+        await updateDoc(
+            doc(db,"laporanMeditasi",firestoreId),
+            {
+                pr_individu: isi
+            }
+        );
+
+        alert("✅ PR berhasil disimpan.");
+
+    }catch(err){
+
+        console.error(err);
+
+        alert("❌ Gagal menyimpan PR.");
+
+    }
+
+}
 window.addEventListener('DOMContentLoaded', renderRiwayat);
 
 window.renderRiwayat = renderRiwayat;
