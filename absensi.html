@@ -143,9 +143,10 @@
             let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
 
             tanggalList.forEach(tgl => {
+                // Diperbaiki: Menggunakan pembanding nama murid yang presisi dan bebas error undefined
                 const dataJurnal = db.find(item =>
                     normalizeDate(item.tanggal) === tgl &&
-                    normalizeText(item.nama).includes(searchNama)
+                    normalizeText(item.nama) === normalizeText(nama)
                 );
 
                 let status = "No";
