@@ -150,7 +150,7 @@
             tanggalList.forEach(tgl => {
                 const dataJurnal = db.find(item =>
                     normalizeDate(item.tanggal) === tgl &&
-                    normalizeText(item.nama) === normalizeText(nama)
+                    normalizeText(item.nama).includes(searchNama)
                 );
 
                 let status = "No";
