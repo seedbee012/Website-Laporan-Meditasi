@@ -31,6 +31,10 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 const auth = getAuth(app);
+async function tambahJurnal(data) {
+    const ref = await addDoc(collection(db, "laporanMeditasi"), data);
+    return ref.id;
+}
 
 export {
   db,
@@ -44,5 +48,6 @@ export {
   signInWithEmailAndPassword,
   signInAnonymously,
   onAuthStateChanged,
-  signOut
+  signOut,
+  tambahJurnal
 };
