@@ -67,6 +67,7 @@
                     </tr>
                 </thead>
                 <tbody id="table-matrix-rows" class="divide-y divide-slate-200 bg-white">
+                    <!-- Baris data diisi otomatis oleh JavaScript -->
                 </tbody>
             </table>
         </div>
@@ -78,6 +79,32 @@
     </div>
 
     <script>
+        // --- 1. PROSES PENYEDOTAN & GABUNG DATA LAMA (ANTI-HILANG) ---
+        (function migrasiDataOtomatis() {
+            const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+            const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
+            const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
+
+            // Jika ditemukan ada data di laci lama, satukan ke dbUtama
+            if (dbLama1.length > 0 || dbLama2.length > 0) {
+                // Gunakan Map untuk menghindari duplikasi data berdasarkan ID unik data
+                const mapGabung = new Map();
+                
+                // Masukkan data lama dulu, baru ditimpa/ditambah data utama agar aman
+                dbLama1.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+                dbLama2.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+                dbUtama.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+
+                const hasilGabungan = Array.from(mapGabung.values());
+                localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
+                
+                // Bersihkan laci lama secara halus agar meringankan memori browser
+                localStorage.removeItem('jurnalMeditasiDB');
+                localStorage.removeItem('meditasi_entries');
+                console.log("Migrasi data sukses! Data lama berhasil diselamatkan ke laci 'meditasi_db'.");
+            }
+        })();
+
         // MASTER DAFTAR NAMA MURID (31 Nama Sesuai Permintaan)
         const masterMurid = [
             "Suk Wan", "Ahin", "Heri S", "gUyong", "Yuliana", "Leonardi", "Limey", 
@@ -129,10 +156,10 @@
                     // Cari data spesifik berdasarkan nama dan tanggal
                     const dataJurnal = db.find(item => item.tanggal === tgl && item.nama.toLowerCase().trim() === nama.toLowerCase().trim());
                     
-                    // Default nilai dari database form input ("Yes" atau "No")
+                    // PENYELARASAN PENTING: Mendeteksi kata "Ya" atau "Yes" dari database
                     let status = "No"; 
                     if (dataJurnal) {
-                        status = dataJurnal.ikut_sesi === "Yes" ? "Yes" : "No";
+                        status = (dataJurnal.ikut_sesi === "Yes" || dataJurnal.ikut_sesi === "Ya") ? "Yes" : "No";
                     }
                     
                     // Cek jika ada override / perubahan manual dari tombol simpan absensi sebelumnya
