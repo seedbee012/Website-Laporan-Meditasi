@@ -58,25 +58,27 @@
                     </tr>
                 </thead>
                 <tbody id="tbody-riwayat" class="divide-y divide-slate-200 text-slate-600"></tbody>
-            </table>
-        </div>
-<td class="p-3 text-center sticky right-0 bg-white">
-    <div class="flex gap-1 justify-center">
+                <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
+
+    <div class="flex gap-2 justify-center">
 
         <button
             onclick="bukaHalamanEdit('${item.firestoreId}')"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
             Edit 📝
         </button>
 
         <button
             onclick="hapusLaporan('${item.firestoreId}')"
-            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
+            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
             Hapus 🗑️
         </button>
 
     </div>
+
 </td>
+            </table>
+        </div>
         <div id="empty-state" class="hidden text-center py-12 border-2 border-dashed border-slate-200 rounded-b-xl bg-slate-50/30">
             <p id="empty-text" class="text-sm text-slate-500 font-medium">Tidak ada data untuk ditampilkan.</p>
         </div>
