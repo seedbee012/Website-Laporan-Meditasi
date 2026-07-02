@@ -148,7 +148,7 @@
     </div>
 
     <script type="module">
-        import {
+    import {
     db,
     auth,
     collection,
@@ -158,7 +158,8 @@
     doc,
     signInWithEmailAndPassword,
     signInAnonymously,
-    signOut
+    signOut,
+    tambahJurnal
 } from "./firebase.js";
         
         function getRole() {
@@ -255,7 +256,7 @@
             }
         });
 
-        function simpanJurnal(event) {
+async function simpanJurnal(event) {
             event.preventDefault();
 
             const nama = document.getElementById('input-nama').value.trim();
@@ -314,12 +315,19 @@
                     pr_individu: role === 'SukWan' ? document.getElementById('input-pr').value : ""
                 };
 
-                db.push(jurnalBaru);
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                alert("✅ Jurnal Berhasil Dikirim!");
-                document.getElementById('meditationForm').reset();
-                document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
-            }
+try {
+    await tambahJurnal(jurnalBaru);
+
+    alert("✅ Jurnal Berhasil Dikirim!");
+
+    document.getElementById('meditationForm').reset();
+    document.getElementById('input-tanggal').value =
+        new Date().toISOString().split('T')[0];
+
+} catch (error) {
+    console.error(error);
+    alert("❌ Gagal menyimpan jurnal ke Firebase.");
+}            }
         }
         window.prosesLogin = prosesLogin;
 window.prosesLogout = prosesLogout;
