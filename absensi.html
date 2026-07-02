@@ -91,7 +91,7 @@
     })();
 
     const masterMurid = [
-        "Suk Wan", "Ahin", "Heri S", "gUyong", "Yuliana", "Leonardi", "Limey",
+        "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey",
         "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan",
         "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
         "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
@@ -134,8 +134,12 @@
             headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${displayDate}</th>`;
         });
         headerRow.innerHTML = headerHTML;
+        
+        console.log("Data tampil:", dataTampil);
+        console.log("HTML Rows:", htmlRows);
 
-        tbody.innerHTML = '';
+        tbody.innerHTML = htmlRows;
+        
 
         masterMurid.forEach(nama => {
             const tr = document.createElement('tr');
