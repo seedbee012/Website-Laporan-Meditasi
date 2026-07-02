@@ -71,139 +71,147 @@
         ✅ Perubahan absensi berhasil disimpan ke sistem!
     </div>
 
-    <script>
-        (function migrasiDataOtomatis() {
-            const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
-            const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
+<script>
+    (function migrasiDataOtomatis() {
+        const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+        const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
+        const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
 
-            if (dbLama1.length > 0 || dbLama2.length > 0) {
-                const mapGabung = new Map();
-                dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-                dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-                dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+        if (dbLama1.length > 0 || dbLama2.length > 0) {
+            const mapGabung = new Map();
+            dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+            dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+            dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
 
-                const hasilGabungan = Array.from(mapGabung.values());
-                localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
-                localStorage.removeItem('jurnalMeditasiDB');
-                localStorage.removeItem('meditasi_entries');
-            }
-        })();
-
-        const masterMurid = [
-            "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey",
-            "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan",
-            "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
-            "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
-        ];
-
-        localStorage.setItem('murid_master', JSON.stringify(masterMurid));
-
-        const tanggalList = [];
-        for (let i = 1; i <= 31; i++) {
-            let day = i < 10 ? '0' + i : i;
-            tanggalList.push(`2026-07-${day}`);
+            const hasilGabungan = Array.from(mapGabung.values());
+            localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
+            localStorage.removeItem('jurnalMeditasiDB');
+            localStorage.removeItem('meditasi_entries');
         }
-        for (let i = 1; i <= 31; i++) {
-            let day = i < 10 ? '0' + i : i;
-            tanggalList.push(`2026-08-${day}`);
-        }
+    })();
 
-        function isYesStatus(value) {
-            return value === "Yes" || value === "Ya";
-        }
+    const masterMurid = [
+        "Suk Wan", "Ahin", "Heri S", "gUyong", "Yuliana", "Leonardi", "Limey",
+        "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan",
+        "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
+        "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
+    ];
 
-        function renderMatrix() {
-            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            const headerRow = document.getElementById('table-headers');
-            const tbody = document.getElementById('table-matrix-rows');
+    localStorage.setItem('murid_master', JSON.stringify(masterMurid));
 
-            let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama Murid</th>`;
+    const tanggalList = [];
+    for (let i = 1; i <= 31; i++) {
+        let day = i < 10 ? '0' + i : i;
+        tanggalList.push(`2026-07-${day}`);
+    }
+    for (let i = 1; i <= 31; i++) {
+        let day = i < 10 ? '0' + i : i;
+        tanggalList.push(`2026-08-${day}`);
+    }
+
+    function normalizeText(v) {
+        return (v || '').toString().toLowerCase().trim();
+    }
+
+    function normalizeDate(v) {
+        if (!v) return '';
+        return v.toString().slice(0, 10);
+    }
+
+    function isYesStatus(value) {
+        return value === "Yes" || value === "Ya";
+    }
+
+    function renderMatrix() {
+        const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+        const headerRow = document.getElementById('table-headers');
+        const tbody = document.getElementById('table-matrix-rows');
+
+        let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama Murid</th>`;
+        tanggalList.forEach(tgl => {
+            const d = new Date(tgl);
+            const displayDate = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+            headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${displayDate}</th>`;
+        });
+        headerRow.innerHTML = headerHTML;
+
+        tbody.innerHTML = '';
+
+        masterMurid.forEach(nama => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/50 transition-colors";
+
+            let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
+
             tanggalList.forEach(tgl => {
-                const d = new Date(tgl);
-                const displayDate = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
-                headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${displayDate}</th>`;
-            });
-            headerRow.innerHTML = headerHTML;
+                const dataJurnal = db.find(item =>
+                    normalizeDate(item.tanggal) === tgl &&
+                    normalizeText(item.nama) === normalizeText(nama)
+                );
 
-            tbody.innerHTML = '';
-
-            masterMurid.forEach(nama => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/50 transition-colors";
-
-                let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
-
-                tanggalList.forEach(tgl => {
-                    const dataJurnal = db.find(item =>
-                        item.tanggal === tgl &&
-                        item.nama &&
-                        item.nama.toLowerCase().trim() === nama.toLowerCase().trim()
-                    );
-
-                    let status = "No";
-                    if (dataJurnal) {
-                        status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
-                    }
-
-                    const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-                    if (manualSaves[nama]) {
-                        status = manualSaves[nama];
-                    }
-
-                    const selectClass = status === "Yes" ? "select-yes" : "select-no";
-
-                    rowHTML += `
-                        <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
-                            <select data-nama="${nama}" data-tanggal="${tgl}" onchange="updateColors(this)"
-                                class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
-                                <option value="Yes" ${status === 'Yes' ? 'selected' : ''}>Yes</option>
-                                <option value="No" ${status === 'No' ? 'selected' : ''}>No</option>
-                            </select>
-                        </td>
-                    `;
-                });
-
-                tr.innerHTML = rowHTML;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updateColors(element) {
-            if (element.value === "Yes") {
-                element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
-            } else {
-                element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
-            }
-        }
-
-        function saveMatrixChanges() {
-            const dropdowns = document.querySelectorAll('select[data-nama]');
-            const dataPerTanggal = {};
-
-            dropdowns.forEach(select => {
-                const nama = select.getAttribute('data-nama');
-                const tgl = select.getAttribute('data-tanggal');
-                const nilai = select.value;
-
-                if (!dataPerTanggal[tgl]) {
-                    dataPerTanggal[tgl] = {};
+                let status = "No";
+                if (dataJurnal) {
+                    status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
                 }
-                dataPerTanggal[tgl][nama] = nilai;
+
+                const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+                if (manualSaves[nama]) {
+                    status = manualSaves[nama];
+                }
+
+                const selectClass = status === "Yes" ? "select-yes" : "select-no";
+
+                rowHTML += `
+                    <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
+                        <select data-nama="${nama}" data-tanggal="${tgl}" onchange="updateColors(this)"
+                            class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
+                            <option value="Yes" ${status === 'Yes' ? 'selected' : ''}>Yes</option>
+                            <option value="No" ${status === 'No' ? 'selected' : ''}>No</option>
+                        </select>
+                    </td>
+                `;
             });
 
-            for (const tgl in dataPerTanggal) {
-                localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
-            }
+            tr.innerHTML = rowHTML;
+            tbody.appendChild(tr);
+        });
+    }
 
-            const toast = document.getElementById('toast');
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-
-            renderMatrix();
+    function updateColors(element) {
+        if (element.value === "Yes") {
+            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
+        } else {
+            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
         }
+    }
+
+    function saveMatrixChanges() {
+        const dropdowns = document.querySelectorAll('select[data-nama]');
+        const dataPerTanggal = {};
+
+        dropdowns.forEach(select => {
+            const nama = select.getAttribute('data-nama');
+            const tgl = select.getAttribute('data-tanggal');
+            const nilai = select.value;
+
+            if (!dataPerTanggal[tgl]) {
+                dataPerTanggal[tgl] = {};
+            }
+            dataPerTanggal[tgl][nama] = nilai;
+        });
+
+        for (const tgl in dataPerTanggal) {
+            localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
+        }
+
+        const toast = document.getElementById('toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => { toast.classList.add('hidden'); }, 3000);
 
         renderMatrix();
-    </script>
+    }
+
+    renderMatrix();
+</script>
 </body>
 </html>
