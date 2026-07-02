@@ -3,381 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembar Riwayat & Monitor Jurnal</title>
-    <!-- Script Tailwind & html2pdf -->
+    <title>Riwayat Jurnal Meditasi</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+        /* Memperhalus scrollbar horizontal pada tabel jika datanya penuh */
+        .table-container::-webkit-scrollbar { height: 6px; }
+        .table-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
 
-    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8 animate-fade-in">
-        
-        <!-- NAVIGASI ATAS -->
-        <div class="mb-6 flex flex-wrap gap-3 justify-between items-center border-b border-slate-100 pb-4 no-print">
-            <a href="index.html" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 text-sm font-semibold transition-colors">
-                ← Kembali Isi Jurnal Baru
-            </a>
-            <div class="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold" id="role-badge">
-                Mode: Pengguna Umum
-            </div>
+    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
+        <a href="index.html" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+            ← Kembali Isi Jurnal
+        </a>
+        <div id="status-role" class="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200">
+            Mode: Memuat...
         </div>
+    </div>
 
-        <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8">
+        <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
             <div>
-                <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Riwayat & Pemantauan Jurnal Meditasi</h1>
-                <p id="info-akses" class="text-sm text-slate-500 mt-1">Silakan masukkan nama Anda untuk melihat riwayat pribadi Anda.</p>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Riwayat Jurnal Meditasi Harian</h1>
+                <p id="keterangan-akses" class="text-sm text-slate-500 mt-1">Memuat hak akses data...</p>
             </div>
-            <!-- TOMBOL DOWNLOAD PDF -->
-            <button onclick="downloadPDFRiwayat()" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer no-print">
-                Unduh Laporan (PDF) 📄
-            </button>
-        </div>
-
-        <!-- PANEL INPUT PR MASSAL (Hanya Ci Suk Wan) -->
-        <div id="panel-bulk-pr" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6 no-print">
-            <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-2">
-                ✨ Jadwalkan PR / Target Batin Masa Depan (Otomatis Menempel)
-            </h3>
-            <p class="text-xs text-amber-700 mb-3">Meskipun murid belum mengisi jurnal sampai tanggal tujuan, PR ini akan otomatis masuk saat mereka mulai menulis nanti.</p>
             
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label class="block text-xs font-semibold text-amber-800 mb-1">Nama Murid (Harus persis)</label>
-                    <input type="text" id="bulk-nama" placeholder="Contoh: Budi" class="w-full bg-white rounded-lg border border-amber-200 px-3 py-1.5 text-sm outline-none focus:border-amber-500">
+            <!-- Filter pencarian nama murid (berlaku untuk admin maupun user biasa) -->
+            <div id="admin-filter-box" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 w-full sm:w-auto">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
+                    <input type="text" id="search-nama" oninput="renderRiwayat()" placeholder="Ketik nama di sini..." class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 w-full sm:w-60">
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-amber-800 mb-1">Dari Tanggal</label>
-                    <input type="date" id="bulk-tgl-mulai" class="w-full bg-white rounded-lg border border-amber-200 px-3 py-1.5 text-sm outline-none focus:border-amber-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-amber-800 mb-1">Sampai Tanggal</label>
-                    <input type="date" id="bulk-tgl-selesai" class="w-full bg-white rounded-lg border border-amber-200 px-3 py-1.5 text-sm outline-none focus:border-amber-500">
-                </div>
-            </div>
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-amber-800 mb-1">Isi materi PR / Target Batin</label>
-                    <textarea id="bulk-teks-pr" rows="2" placeholder="Ketik atau paste materi target di sini..." class="w-full bg-white rounded-lg border border-amber-200 px-3 py-2 text-sm outline-none focus:border-amber-500"></textarea>
-                </div>
-                <button onclick="prosesBulkPR()" class="bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs px-4 py-2 rounded-lg transition-colors cursor-pointer shadow-xs">
-                    ⚡ Terapkan & Kunci Target Rentang Tanggal
-                </button>
             </div>
         </div>
 
-        <!-- PANEL AKSES PRIBADI / FILTER -->
-        <div class="bg-slate-50 rounded-xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 no-print">
-            <div>
-                <label for="search-nama" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Masukkan Nama Anda (Sesuai Jurnal)</label>
-                <input type="text" id="search-nama" oninput="renderTable()" placeholder="Ketik nama Anda di sini..." class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500">
-            </div>
-            <div>
-                <label for="search-tanggal" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Filter Tanggal Tampilan (Opsional)</label>
-                <input type="date" id="search-tanggal" onchange="renderTable()" class="w-full bg-white rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500">
-            </div>
+        <!-- AREA TABEL UTAMA -->
+        <div class="table-container w-full overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
+            <table class="w-full text-left border-collapse text-sm min-w-[1200px]">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold text-xs uppercase tracking-wider">
+                        <th class="p-3 whitespace-nowrap">Tanggal</th>
+                        <th class="p-3 whitespace-nowrap">Nama</th>
+                        <th class="p-3 text-center whitespace-nowrap">Ikut Meditasi</th>
+                        <th class="p-3 min-w-[140px]">Meditasi Jalan</th>
+                        <th class="p-3 min-w-[140px]">Meditasi Duduk</th>
+                        <th class="p-3 min-w-[140px]">Wandering Mind</th>
+                        <th class="p-3 min-w-[160px]">Cepat Dapat Konsentrasi</th>
+                        <th class="p-3 min-w-[160px]">Fokus Pegang Nafas</th>
+                        <th class="p-3 min-w-[140px]">Nafas Halus</th>
+                        <th class="p-3 min-w-[140px]">Muncul Cahaya</th>
+                        <th class="p-3 min-w-[200px]">Pengalaman Batin</th>
+                        <th class="p-3 min-w-[220px] bg-indigo-50/50">Review saat Sesi Sharing</th>
+                        <th class="p-3 min-w-[200px] bg-emerald-50/50">PR/Target Individu (Ci Suk Wan)</th>
+                        <th class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-riwayat" class="divide-y divide-slate-200 text-slate-600">
+                    <!-- Baris data diisi otomatis oleh JavaScript -->
+                </tbody>
+            </table>
         </div>
 
-        <!-- AREA YANG AKAN DI-EXPORT KE PDF -->
-        <div id="area-cetak-pdf">
-            <div class="overflow-x-auto rounded-xl border border-slate-100 shadow-xs">
-                <table class="w-full text-left border-collapse bg-white text-sm">
-                    <thead>
-                        <tr class="bg-slate-900 text-white text-xs uppercase tracking-wider font-semibold">
-                            <th class="p-4 whitespace-nowrap">Tanggal</th>
-                            <th class="p-4 whitespace-nowrap">Nama</th>
-                            <th class="p-4 whitespace-nowrap text-center">Ikut Meditasi</th>
-                            <th class="p-4 min-w-[100px]">Meditasi Jalan</th>
-                            <th class="p-4 min-w-[100px]">Meditasi Duduk</th>
-                            <th class="p-4 min-w-[120px]">Wandering Mind</th>
-                            <th class="p-4 min-w-[120px]">Cepat Dapat Konsentrasi</th>
-                            <th class="p-4 min-w-[90px]">Fokus Pegang Nafas</th>
-                            <th class="p-4 min-w-[90px]">Nafas Halus</th>
-                            <th class="p-4 min-w-[100px]">Muncul Cahaya</th>
-                            <th class="p-4 min-w-[180px]">Pengalaman Batin</th>
-                            <th class="p-4 min-w-[180px] bg-indigo-950 text-indigo-100">Review saat Sesi Sharing</th>
-                            <th class="p-4 min-w-[220px] bg-amber-950 text-amber-100">PR/Target Individu (Ci Suk Wan yg Isi)</th>
-                            <th class="p-4 text-center sticky right-0 bg-slate-900 z-10 min-w-[150px] id-kolom-aksi">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="riwayat-table-body" class="divide-y divide-slate-100 text-slate-700">
-                        <!-- Di-render otomatis lewat Javascript -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- STATE JIKA KOSONG / BELUM KETIK NAMA -->
-        <div id="empty-state" class="text-center py-12 text-slate-400 font-medium no-print">
-            🔒 Masukkan nama Anda pada kotak di atas untuk menampilkan riwayat data pribadi Anda.
+        <!-- Jika data kosong -->
+        <div id="empty-state" class="hidden text-center py-12 border-2 border-dashed border-slate-200 rounded-b-xl bg-slate-50/30">
+            <p id="empty-text" class="text-sm text-slate-500 font-medium">Tidak ada data untuk ditampilkan.</p>
         </div>
 
     </div>
 
     <script>
+        // 1. Ambil Role Aktif
         function getRole() {
             return localStorage.getItem('currentUserRole') || 'User';
         }
 
-        function formatTanggal(stringTanggal) {
-            if(!stringTanggal) return '-';
-            const opsi = { year: 'numeric', month: 'short', day: 'numeric' };
-            return new Date(stringTanggal).toLocaleDateString('id-ID', opsi);
-        }
-
-        function renderTable() {
-            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            const tbody = document.getElementById('riwayat-table-body');
+        // 2. Fungsi Render Riwayat Format Tabel
+        function renderRiwayat() {
+            const role = getRole();
+            const tbody = document.getElementById('tbody-riwayat');
             const emptyState = document.getElementById('empty-state');
-            const infoAkses = document.getElementById('info-akses');
-            const bulkPanel = document.getElementById('panel-bulk-pr');
-            const role = getRole();
+            const emptyText = document.getElementById('empty-text');
+            const statusRole = document.getElementById('status-role');
+            const keteranganAkses = document.getElementById('keterangan-akses');
+            const adminFilterBox = document.getElementById('admin-filter-box');
+            const searchNama = document.getElementById('search-nama') ? document.getElementById('search-nama').value.toLowerCase().trim() : '';
 
-            const queryNama = document.getElementById('search-nama').value.toLowerCase().trim();
-            const filterTgl = document.getElementById('search-tanggal').value;
+            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
 
-            const badge = document.getElementById('role-badge');
-            if(role === 'User') {
-                badge.innerText = "Mode: Pengguna Umum";
-                badge.className = "flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold";
-                infoAkses.innerText = "Ketik nama Anda dengan tepat untuk membuka lembar riwayat pribadi Anda.";
-                bulkPanel.classList.add('hidden');
+            // Pengkondisian Tampilan teks & filter berdasarkan Role
+            if (role === 'SukWan' || role === 'Titin') {
+                statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
+                keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
+                adminFilterBox.classList.remove('hidden');
             } else {
-                badge.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
-                badge.className = "flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xs";
+                statusRole.innerText = "Mode: Pengguna Umum";
+                keteranganAkses.innerText = "Masukkan nama Anda pada kotak filter untuk melihat rekam jurnal pribadi.";
+                adminFilterBox.classList.remove('hidden');
                 
-                if (role === 'SukWan') {
-                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Guru Aktif:</strong> Ketik/paste target langsung di kotak tabel (otomatis menyimpan), atau gunakan panel massal untuk range tanggal.";
-                    bulkPanel.classList.remove('hidden');
+                const label = adminFilterBox.querySelector('label');
+                if(label) label.innerText = "Masukkan Nama Anda:";
+            }
+
+            // FILTERING DATA
+            let dataTampil = [];
+
+            if (role === 'SukWan' || role === 'Titin') {
+                if (searchNama !== '') {
+                    dataTampil = db.filter(item => item.nama && item.nama.toLowerCase().includes(searchNama));
                 } else {
-                    infoAkses.innerHTML = "<strong class='text-indigo-900'>Mode Editor Aktif:</strong> Memonitor data jurnal dan perkembangan spiritual.";
-                    bulkPanel.classList.add('hidden');
+                    dataTampil = db;
+                }
+            } else {
+                if (searchNama !== '') {
+                    dataTampil = db.filter(item => item.nama && item.nama.toLowerCase() === searchNama);
+                } else {
+                    tbody.innerHTML = '';
+                    emptyState.classList.remove('hidden');
+                    emptyText.innerText = "Silakan ketik nama lengkap Anda di kotak filter atas untuk memunculkan riwayat pribadi.";
+                    return;
                 }
             }
 
-            tbody.innerHTML = '';
+            // Urutkan data berdasarkan input terbaru
+            dataTampil.sort((a, b) => b.id - a.id);
 
-            if (role === 'User' && queryNama === "") {
-                emptyState.innerText = "🔒 Masukkan nama Anda pada kotak di atas untuk menampilkan riwayat data pribadi Anda.";
+            // Cek jika penyaringan menghasilkan data kosong
+            if (dataTampil.length === 0) {
+                tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
+                emptyText.innerText = "Tidak ada laporan meditasi yang ditemukan.";
                 return;
             }
 
-            const filteredData = db.filter(item => {
-                const itemNama = (item.nama || '').toLowerCase().trim();
+            // Sembunyikan empty state jika ada data yang lolos filter
+            emptyState.classList.add('hidden');
+
+            // LOOPING DAN MEMBUAT BARIS TABEL (TR & TD)
+            let htmlRows = '';
+            dataTampil.forEach(item => {
                 
-                if (role === 'User') {
-                    const matchNamaPribadi = itemNama === queryNama;
-                    const matchTanggal = !filterTgl || item.tanggal === filterTgl;
-                    return matchNamaPribadi && matchTanggal;
-                } else {
-                    const matchNamaAdmin = itemNama.includes(queryNama);
-                    const matchTanggal = !filterTgl || item.tanggal === filterTgl;
-                    return matchNamaAdmin && matchTanggal;
-                }
-            });
-
-            filteredData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
-
-            if(filteredData.length === 0) {
-                emptyState.innerText = "🚫 Tidak ditemukan data jurnal yang sesuai.";
-                emptyState.classList.remove('hidden');
-                return;
-            } else {
-                emptyState.classList.add('hidden');
-            }
-
-            filteredData.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors align-top group";
-
+                // Badge Sesi Meditasi
                 const badgeSesi = item.ikut_sesi === 'Ya' 
-                    ? `<span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-semibold">Ya</span>` 
-                    : `<span class="bg-rose-50 text-rose-600 text-xs px-2 py-1 rounded-full font-semibold">Tidak</span>`;
+                    ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-medium">Ya</span>`
+                    : `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-medium">Tidak</span>`;
 
-                // TAMPILAN FEEDBACK TARGET BATIN (Auto-Save Instan Tanpa Tombol)
-                let kolomPRDinamis = "";
-                if (role === 'SukWan') {
-                    kolomPRDinamis = `
-                        <textarea id="live-pr-${item.id}" oninput="simpanPRLangsungOtomatis(${item.id})" rows="3" class="w-full bg-white border border-amber-200 rounded-lg p-2 text-xs text-amber-950 outline-none focus:border-amber-500 shadow-inner no-print-textarea" placeholder="Ketik target batin...">${item.pr_individu || ''}</textarea>
-                        <div class="hidden print-text whitespace-pre-line text-xs font-medium text-amber-950">${item.pr_individu || '-'}</div>
-                    `;
-                } else {
-                    kolomPRDinamis = `<span class="text-xs font-medium text-amber-950">${item.pr_individu || '<em class="text-slate-400">Belum ada feedback target...</em>'}</span>`;
-                }
-
-                // TOMBOL AKSI BERDAMPINGAN (Semua bisa Edit & Hapus)
-                let tombolAksiKonten = "";
-                if(role === 'User') {
-                    tombolAksiKonten = `
-                        <div class="flex items-center justify-center gap-2 min-w-[140px] no-print">
-                            <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
-                                Edit
+                htmlRows += `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <!-- Tanggal -->
+                        <td class="p-3 font-medium text-slate-900 whitespace-nowrap">${item.tanggal || '-'}</td>
+                        <!-- Nama -->
+                        <td class="p-3 font-semibold text-slate-800 whitespace-nowrap">${item.nama || 'Tanpa Nama'}</td>
+                        <!-- Ikut Meditasi -->
+                        <td class="p-3 text-center">${badgeSesi}</td>
+                        <!-- Meditasi Jalan -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_jalan || '-'}</td>
+                        <!-- Meditasi Duduk -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_duduk || '-'}</td>
+                        <!-- Wandering Mind -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.frekuensi_wandering || '-'}</td>
+                        <!-- Cepat Dapat Konsentrasi -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.kembali_cepat || '-'}</td>
+                        <!-- Fokus Pegang Nafas -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_hold || '-'}</td>
+                        <!-- Nafas Halus -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_halus || '-'}</td>
+                        <!-- Muncul Cahaya -->
+                        <td class="p-3 text-xs whitespace-pre-line">${item.muncul_cahaya || '-'}</td>
+                        <!-- Pengalaman Batin -->
+                        <td class="p-3 text-xs italic text-slate-500 whitespace-pre-line">"${item.pengalaman || '-'}"</td>
+                        <!-- Review saat Sesi Sharing -->
+                        <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
+                        <!-- PR/Target Individu (Otomatis/Diisi oleh Ci Suk Wan lewat Edit) -->
+                        <td class="p-3 text-xs bg-emerald-50/30 text-emerald-950 whitespace-pre-line font-medium border-l border-emerald-100">${item.pr_individu || 'Belum ada PR.'}</td>
+                        <!-- Aksi (Tombol Edit terproteksi sticky kanan) -->
+                        <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
+                            <button onclick="bukaHalamanEdit(${item.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors shadow-xs cursor-pointer">
+                                Edit 📝
                             </button>
-                            <button onclick="hapusJurnal(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
-                                Hapus 🗑️
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    tombolAksiKonten = `
-                        <div class="flex items-center justify-center gap-2 min-w-[140px] no-print">
-                            <button onclick="bukaAksiEdit(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
-                                Koreksi
-                            </button>
-                            <button onclick="hapusJurnal(${item.id}, '${item.nama}', '${item.tanggal}')" class="text-xs bg-rose-600 hover:bg-rose-700 text-white font-semibold px-2 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer whitespace-nowrap">
-                                Hapus 🗑️
-                            </button>
-                        </div>
-                    `;
-                }
-
-                // PEMETAAN KOLOM DATA SESUAI DENGAN SUSUNAN HEADER TABEL YANG BARU
-                tr.innerHTML = `
-                    <td class="p-4 font-medium whitespace-nowrap text-slate-900">${formatTanggal(item.tanggal)}</td>
-                    <td class="p-4 font-semibold text-slate-800">${item.nama || '-'}</td>
-                    <td class="p-4 text-center">${badgeSesi}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.durasi_jalan || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.durasi_duduk || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.frekuensi_wandering || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.kembali_cepat || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.durasi_hold || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.durasi_halus || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs">${item.muncul_cahaya || '-'}</td>
-                    <td class="p-4 whitespace-pre-line text-xs text-slate-600 italic font-serif">"${item.pengalaman || '-'}"</td>
-                    <td class="p-4 whitespace-pre-line text-xs bg-indigo-50/30 text-slate-700 font-normal">
-                        ${item.review_sharing ? `"${item.review_sharing}"` : '<em class="text-slate-400">Tidak ada review...</em>'}
-                    </td>
-                    <td class="p-4 bg-amber-50/40 border-x border-amber-100">${kolomPRDinamis}</td>
-                    <td class="p-4 text-center id-kolom-aksi-isi sticky right-0 bg-white group-hover:bg-slate-50 z-10 border-l border-slate-100">
-                        ${tombolAksiKonten}
-                    </td>
+                        </td>
+                    </tr>
                 `;
-                tbody.appendChild(tr);
             });
+
+            tbody.innerHTML = htmlRows;
         }
 
-        function simpanPRLangsungOtomatis(id) {
-            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            const inputTeks = document.getElementById(`live-pr-${id}`).value;
-            const idx = db.findIndex(item => item.id === id);
-            if(idx !== -1) {
-                db[idx].pr_individu = inputTeks;
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-            }
-        }
-
-        function hapusJurnal(id, nama, tanggal) {
-            const role = getRole();
-            let izinkanHapus = false;
-
-            if (role === 'User') {
-                const konfirmasiNama = prompt(`⚠️ PERINGATAN: Menghapus jurnal tanggal ${formatTanggal(tanggal)} tidak bisa dibatalkan.\n\nUntuk melanjutkan, ketik ulang nama Anda ("${nama}") di bawah ini:`);
-                
-                if (konfirmasiNama && konfirmasiNama.trim().toLowerCase() === nama.trim().toLowerCase()) {
-                    izinkanHapus = true;
-                } else if (konfirmasiNama !== null) {
-                    alert("❌ Nama yang Anda ketik tidak cocok. Penghapusan dibatalkan.");
-                }
-            } else {
-                izinkanHapus = confirm(`Apakah Anda (Admin) yakin ingin menghapus data jurnal milik "${nama}" pada tanggal ${formatTanggal(tanggal)}? Data yang dihapus tidak bisa dikembalikan.`);
-            }
-
-            if (izinkanHapus) {
-                let db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-                db = db.filter(item => item.id !== id);
-                localStorage.setItem('meditasi_db', JSON.stringify(db));
-                alert("✅ Jurnal sukses dihapus!");
-                renderTable();
-            }
-        }
-
-        function downloadPDFRiwayat() {
-            const queryNama = document.getElementById('search-nama').value.trim() || "Semua_Murid";
-            
-            const textareas = document.querySelectorAll('.no-print-textarea');
-            const printTexts = document.querySelectorAll('.print-text');
-            textareas.forEach(t => t.style.display = 'none');
-            printTexts.forEach(p => p.style.display = 'block');
-
-            document.querySelectorAll('.id-kolom-aksi, .id-kolom-aksi-isi').forEach(el => el.style.display = 'none');
-
-            const element = document.getElementById('area-cetak-pdf');
-            const opsi = {
-                margin:       0.3,
-                filename:     `Laporan_Jurnal_Meditasi_${queryNama}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
-            };
-
-            html2pdf().set(opsi).from(element).save().then(() => {
-                textareas.forEach(t => t.style.display = 'block');
-                printTexts.forEach(p => p.style.display = 'none');
-                document.querySelectorAll('.id-kolom-aksi, .id-kolom-aksi-isi').forEach(el => el.style.display = '');
-            });
-        }
-
-        function prosesBulkPR() {
-            const namaTarget = document.getElementById('bulk-nama').value.trim();
-            const tglMulaiStr = document.getElementById('bulk-tgl-mulai').value;
-            const tglSelesaiStr = document.getElementById('bulk-tgl-selesai').value;
-            const teksPR = document.getElementById('bulk-teks-pr').value;
-
-            if(!namaTarget || !tglMulaiStr || !tglSelesaiStr) {
-                alert("Mohon isi Nama Murid, Tanggal Mulai, dan Tanggal Selesai!");
-                return;
-            }
-
-            const targetDb = JSON.parse(localStorage.getItem('target_db')) || [];
-            const start = new Date(tglMulaiStr);
-            const end = new Date(tglSelesaiStr);
-            
-            let currentDate = new Date(start);
-            while(currentDate <= end) {
-                const formatYMD = currentDate.toISOString().split('T')[0];
-                const existingIdx = targetDb.findIndex(t => t.nama.toLowerCase() === namaTarget.toLowerCase() && t.tanggal === formatYMD);
-                if(existingIdx !== -1) {
-                    targetDb[existingIdx].pr_individu = teksPR;
-                } else {
-                    targetDb.push({ nama: namaTarget, tanggal: formatYMD, pr_individu: teksPR });
-                }
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-            localStorage.setItem('target_db', JSON.stringify(targetDb));
-
-            const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            let terupdateJurnalLama = 0;
-
-            db.forEach(item => {
-                const itemNama = (item.nama || '').toLowerCase().trim();
-                if (itemNama === namaTarget.toLowerCase() && item.tanggal) {
-                    const itemTanggal = new Date(item.tanggal);
-                    if(itemTanggal >= new Date(tglMulaiStr) && itemTanggal <= new Date(tglSelesaiStr)) {
-                        item.pr_individu = teksPR;
-                        terupdateJurnalLama++;
-                    }
-                }
-            });
-            localStorage.setItem('meditasi_db', JSON.stringify(db));
-
-            alert(`Sukses mengunci target batin untuk "${namaTarget}"!`);
-            document.getElementById('bulk-teks-pr').value = "";
-            renderTable();
-        }
-
-        function bukaAksiEdit(id) {
+        // 3. Pindah ke halaman utama untuk edit data bawa ID
+        function bukaHalamanEdit(id) {
             window.location.href = `index.html?editId=${id}`;
         }
 
-        window.addEventListener('DOMContentLoaded', renderTable);
+        // 4. Inisialisasi awal saat render halaman dilakukan
+        window.addEventListener('DOMContentLoaded', renderRiwayat);
     </script>
 </body>
 </html>
