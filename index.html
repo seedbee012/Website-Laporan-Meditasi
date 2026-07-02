@@ -147,7 +147,20 @@
         </form>
     </div>
 
-    <script>
+    <script type="module">
+        import {
+    db,
+    auth,
+    collection,
+    addDoc,
+    getDocs,
+    updateDoc,
+    doc,
+    signInWithEmailAndPassword,
+    signInAnonymously,
+    signOut
+} from "./firebase.js";
+        
         function getRole() {
             return localStorage.getItem('currentUserRole') || 'User';
         }
@@ -308,6 +321,9 @@
                 document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
             }
         }
+        window.prosesLogin = prosesLogin;
+window.prosesLogout = prosesLogout;
+window.simpanJurnal = simpanJurnal;
     </script>
 </body>
 </html>
