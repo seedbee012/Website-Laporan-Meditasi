@@ -7,19 +7,17 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { background-color: #f8fafc; }
-        
-        /* Pewarnaan Dropdown secara Dinamis */
+
         .select-yes {
-            background-color: #06b6d4 !important; /* Cyan / Biru terang mirip contoh gambar */
+            background-color: #06b6d4 !important;
             color: #ffffff !important;
             font-weight: bold;
         }
         .select-no {
-            background-color: #f1f5f9 !important; /* Abu-abu netral */
+            background-color: #f1f5f9 !important;
             color: #475569 !important;
         }
 
-        /* Pembeku Kolom Nama (Sticky) agar saat di-scroll ke samping namanya tetap terkunci */
         .sticky-col {
             position: sticky;
             left: 0;
@@ -28,7 +26,6 @@
             z-index: 10;
         }
 
-        /* Desain Scrollbar bawah tabel */
         .custom-scrollbar::-webkit-scrollbar {
             height: 10px;
             width: 10px;
@@ -57,21 +54,17 @@
 
         <div class="mb-6">
             <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">📋 Tabel Kontrol Absensi (1 Juli - 31 Agustus)</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">Geser tabel ke kanan untuk melihat tanggal berikutnya. Klik dropdown untuk mengubah status Yes/No (Warna Biru Otomatis pada opsi Yes).</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Geser tabel ke kanan untuk melihat tanggal berikutnya. Klik dropdown untuk mengubah status Yes/No.</p>
         </div>
 
         <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-xs custom-scrollbar">
             <table class="w-full text-xs sm:text-sm text-left border-collapse">
                 <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-20">
-                    <tr id="table-headers">
-                    </tr>
+                    <tr id="table-headers"></tr>
                 </thead>
-                <tbody id="table-matrix-rows" class="divide-y divide-slate-200 bg-white">
-                    <!-- Baris data diisi otomatis oleh JavaScript -->
-                </tbody>
+                <tbody id="table-matrix-rows" class="divide-y divide-slate-200 bg-white"></tbody>
             </table>
         </div>
-
     </div>
 
     <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-950 text-white px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium z-50 transition-all">
@@ -79,55 +72,45 @@
     </div>
 
     <script>
-        // --- 1. PROSES PENYEDOTAN & GABUNG DATA LAMA (ANTI-HILANG) ---
         (function migrasiDataOtomatis() {
             const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
             const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
             const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
 
-            // Jika ditemukan ada data di laci lama, satukan ke dbUtama
             if (dbLama1.length > 0 || dbLama2.length > 0) {
-                // Gunakan Map untuk menghindari duplikasi data berdasarkan ID unik data
                 const mapGabung = new Map();
-                
-                // Masukkan data lama dulu, baru ditimpa/ditambah data utama agar aman
-                dbLama1.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
-                dbLama2.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
-                dbUtama.forEach(item => { if(item.id) mapGabung.set(item.id, item); });
+                dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+                dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+                dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
 
                 const hasilGabungan = Array.from(mapGabung.values());
                 localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
-                
-                // Bersihkan laci lama secara halus agar meringankan memori browser
                 localStorage.removeItem('jurnalMeditasiDB');
                 localStorage.removeItem('meditasi_entries');
-                console.log("Migrasi data sukses! Data lama berhasil diselamatkan ke laci 'meditasi_db'.");
             }
         })();
 
-        // MASTER DAFTAR NAMA MURID (31 Nama Sesuai Permintaan)
         const masterMurid = [
-            "Suk Wan", "Ahin", "Heri S", "gUyong", "Yuliana", "Leonardi", "Limey", 
-            "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan", 
-            "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry", 
+            "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey",
+            "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan",
+            "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
             "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
         ];
-        
-        // Daftarkan ke LocalStorage agar konsisten
+
         localStorage.setItem('murid_master', JSON.stringify(masterMurid));
 
-        // GENERATE DAFTAR TANGGAL: 1 Juli s/d 31 Agustus 2026
         const tanggalList = [];
-        
-        // Juli (31 Hari)
         for (let i = 1; i <= 31; i++) {
             let day = i < 10 ? '0' + i : i;
             tanggalList.push(`2026-07-${day}`);
         }
-        // Agustus (31 Hari)
         for (let i = 1; i <= 31; i++) {
             let day = i < 10 ? '0' + i : i;
             tanggalList.push(`2026-08-${day}`);
+        }
+
+        function isYesStatus(value) {
+            return value === "Yes" || value === "Ya";
         }
 
         function renderMatrix() {
@@ -135,7 +118,6 @@
             const headerRow = document.getElementById('table-headers');
             const tbody = document.getElementById('table-matrix-rows');
 
-            // 1. Render Header Nama & Tanggal (M/D/YYYY)
             let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama Murid</th>`;
             tanggalList.forEach(tgl => {
                 const d = new Date(tgl);
@@ -144,25 +126,26 @@
             });
             headerRow.innerHTML = headerHTML;
 
-            // 2. Render Baris Setiap Murid
             tbody.innerHTML = '';
+
             masterMurid.forEach(nama => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50/50 transition-colors";
-                
+
                 let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
 
                 tanggalList.forEach(tgl => {
-                    // Cari data spesifik berdasarkan nama dan tanggal
-                    const dataJurnal = db.find(item => item.tanggal === tgl && item.nama.toLowerCase().trim() === nama.toLowerCase().trim());
-                    
-                    // PENYELARASAN PENTING: Mendeteksi kata "Ya" atau "Yes" dari database
-                    let status = "No"; 
+                    const dataJurnal = db.find(item =>
+                        item.tanggal === tgl &&
+                        item.nama &&
+                        item.nama.toLowerCase().trim() === nama.toLowerCase().trim()
+                    );
+
+                    let status = "No";
                     if (dataJurnal) {
-                        status = (dataJurnal.ikut_sesi === "Yes" || dataJurnal.ikut_sesi === "Ya") ? "Yes" : "No";
+                        status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
                     }
-                    
-                    // Cek jika ada override / perubahan manual dari tombol simpan absensi sebelumnya
+
                     const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
                     if (manualSaves[nama]) {
                         status = manualSaves[nama];
@@ -186,7 +169,6 @@
             });
         }
 
-        // Mengubah warna dropdown secara langsung di layar saat dipilih tanpa delay
         function updateColors(element) {
             if (element.value === "Yes") {
                 element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
@@ -195,7 +177,6 @@
             }
         }
 
-        // Menyimpan status modifikasi manual massal ke LocalStorage
         function saveMatrixChanges() {
             const dropdowns = document.querySelectorAll('select[data-nama]');
             const dataPerTanggal = {};
@@ -222,7 +203,6 @@
             renderMatrix();
         }
 
-        // Tampilkan matriks saat pertama kali dibuka
         renderMatrix();
     </script>
 </body>
