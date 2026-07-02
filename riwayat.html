@@ -127,6 +127,7 @@ async function renderRiwayat() {
             const adminFilterBox = document.getElementById('admin-filter-box');
             const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
 const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+console.log("Documents found:", snapshot.size);
 console.log(snapshot.size);
 const dataFirebase = [];
 
@@ -137,6 +138,7 @@ snapshot.forEach((docSnap) => {
         ...docSnap.data()
     });
 });
+    console.log(dataFirebase);
 
             if (role === 'SukWan' || role === 'Titin') {
                 statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
