@@ -133,12 +133,10 @@
             const displayDate = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
             headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${displayDate}</th>`;
         });
+        
         headerRow.innerHTML = headerHTML;
-        
-        console.log("HTML Rows:", htmlRows);
 
-        tbody.innerHTML = htmlRows;
-        
+        tbody.innerHTML = '';
 
         masterMurid.forEach(nama => {
             const tr = document.createElement('tr');
