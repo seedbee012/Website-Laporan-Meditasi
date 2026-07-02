@@ -127,10 +127,11 @@ async function renderRiwayat() {
             const adminFilterBox = document.getElementById('admin-filter-box');
             const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
 const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-
+console.log(snapshot.size);
 const dataFirebase = [];
 
 snapshot.forEach((docSnap) => {
+    console.log(dataFirebase);
     dataFirebase.push({
         firestoreId: docSnap.id,
         ...docSnap.data()
