@@ -207,13 +207,16 @@ if (role === "SukWan" || role === "Titin") {
 
     </td>
     `;
-
 }            });
 
-            tr.innerHTML = rowHTML;
-            tbody.appendChild(tr);
-        });
-        // ===== TOTAL HADIR =====
+...
+
+tr.innerHTML = rowHTML;
+tbody.appendChild(tr);
+
+});
+
+// ===== TOTAL HADIR =====
 const totalRow = document.createElement("tr");
 totalRow.className = "bg-indigo-100 font-bold";
 
@@ -242,7 +245,6 @@ tanggalList.forEach(tgl => {
                 : "No";
         }
 
-        // Ambil perubahan manual (jika ada)
         const manualSaves =
             JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
 
@@ -266,7 +268,8 @@ tanggalList.forEach(tgl => {
 
 totalRow.innerHTML = totalHTML;
 tbody.appendChild(totalRow);
-    }
+
+}
 
     function updateColors(element) {
         if (element.value === "Yes") {
