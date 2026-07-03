@@ -306,7 +306,11 @@ tanggalList.forEach(tgl => {
             normalizeDate(item.tanggal) === tgl &&
             normalizeText(item.nama) === normalizeText(nama)
         );
-
+totalHTML += `
+<td class="text-center border-r border-slate-200 font-bold text-indigo-700">
+    ${totalYes}
+</td>
+`;
         let status = "No";
 
         if (dataJurnal) {
@@ -363,34 +367,38 @@ function updateColors(element) {
 
         let totalYes = 0;
 
-masterMurid.forEach(nama => {
+        masterMurid.forEach(nama => {
 
-    const dataJurnal = dataFirebase.find(item =>
-        normalizeDate(item.tanggal) === tgl &&
-        normalizeText(item.nama) === normalizeText(nama)
-    );
+            const dataJurnal = dataFirebase.find(item =>
+                normalizeDate(item.tanggal) === tgl &&
+                normalizeText(item.nama) === normalizeText(nama)
+            );
 
-    let status = "No";
+            let status = "No";
 
-    if (dataJurnal) {
-        status = isYesStatus(dataJurnal.ikut_sesi)
-            ? "Yes"
-            : "No";
-    }
+            if (dataJurnal) {
+                status = isYesStatus(dataJurnal.ikut_sesi)
+                    ? "Yes"
+                    : "No";
+            }
 
-    const manualSaves =
-        JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+            const manualSaves =
+                JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
 
-    if (manualSaves[nama]) {
-        status = manualSaves[nama];
-    }
+if (manualSaves[nama]) {
+    status = manualSaves[nama];
+}
 
-    if (status === "Yes") {
-        totalYes++;
-    }
+if (status === "Yes") {
+    totalYes++;
+}
+        });
 
-});    
+totalCells[index + 1].innerText = totalYes;
 
+    });
+
+}
     function saveMatrixChanges() {
         const dropdowns = document.querySelectorAll('select[data-nama]');
         const dataPerTanggal = {};
@@ -413,8 +421,9 @@ masterMurid.forEach(nama => {
         const toast = document.getElementById('toast');
         toast.classList.remove('hidden');
         setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-
-        renderMatrix();
+let dataFirebase = [];
+        
+        async function renderMatrix();
     }
 
     renderMatrix();
