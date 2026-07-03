@@ -90,7 +90,7 @@ class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-
         </div>
     </div>
 
-    <script type="module">
+<script type="module">
 import {
 db,
 collection,
@@ -290,7 +290,7 @@ try {
                         rows="3">${item.pr_individu || ""}</textarea>
                         
                         <button
-                        onclick="simpanPR('${item.firestoreId}')"
+                            onclick="simpanPR('${item.firestoreId}')"
                         class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded">
                         💾 Simpan
                         </button>
@@ -388,6 +388,8 @@ window.addEventListener('DOMContentLoaded', renderRiwayat);
 window.renderRiwayat = renderRiwayat;
 window.bukaHalamanEdit = bukaHalamanEdit;
 window.hapusLaporan = hapusLaporan;
+window.simpanPR = simpanPR;
+window.applyPRUntil = applyPRUntil;
     </script>
 </body>
 </html>
