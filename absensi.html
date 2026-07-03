@@ -318,14 +318,14 @@ tanggalList.forEach(tgl => {
         const manualSaves =
             JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
 
-        if (manualSaves[nama]) {
-            status = manualSaves[nama];
-        }
+if (manualSaves[nama]) {
+    status = manualSaves[nama];
+}
 
-        if (status === "Yes") {
-            totalYes++;
-        }
-
+let selectClass =
+    status === "Yes"
+        ? "select-yes"
+        : "select-no";
     });
 
     totalHTML += `
@@ -341,14 +341,21 @@ tbody.appendChild(totalRow);
 
 }
 
-    function updateColors(element) {
-        if (element.value === "Yes") {
-            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
-        } else {
-            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
-        }
+function updateColors(element) {
+
+    if (element.value === "Yes") {
+
+        element.className =
+        "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
+
+    } else {
+
+        element.className =
+        "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
+
     }
 
+}
     function updateTotalHadir() {
 
     const totalRow = document.querySelector("tr.bg-indigo-100");
