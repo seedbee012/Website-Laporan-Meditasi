@@ -213,6 +213,59 @@ if (role === "SukWan" || role === "Titin") {
             tr.innerHTML = rowHTML;
             tbody.appendChild(tr);
         });
+        // ===== TOTAL HADIR =====
+const totalRow = document.createElement("tr");
+totalRow.className = "bg-indigo-100 font-bold";
+
+let totalHTML = `
+<td class="px-4 py-3 sticky-col text-slate-900">
+    👥 Total Hadir
+</td>
+`;
+
+tanggalList.forEach(tgl => {
+
+    let totalYes = 0;
+
+    masterMurid.forEach(nama => {
+
+        const dataJurnal = dataFirebase.find(item =>
+            normalizeDate(item.tanggal) === tgl &&
+            normalizeText(item.nama) === normalizeText(nama)
+        );
+
+        let status = "No";
+
+        if (dataJurnal) {
+            status = isYesStatus(dataJurnal.ikut_sesi)
+                ? "Yes"
+                : "No";
+        }
+
+        // Ambil perubahan manual (jika ada)
+        const manualSaves =
+            JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+
+        if (manualSaves[nama]) {
+            status = manualSaves[nama];
+        }
+
+        if (status === "Yes") {
+            totalYes++;
+        }
+
+    });
+
+    totalHTML += `
+        <td class="text-center border-r border-slate-200 font-bold text-indigo-700">
+            ${totalYes}
+        </td>
+    `;
+
+});
+
+totalRow.innerHTML = totalHTML;
+tbody.appendChild(totalRow);
     }
 
     function updateColors(element) {
