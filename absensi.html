@@ -30,26 +30,13 @@
 
         .select-no {
 
-            background-color: #f1f5f9 !important;
+            background-color: #f0f2f5 !important;
 
-            color: #475569 !important;
+            color: #4B5563 !important;
 
         }
 
         
-
-        .select-manual{
-
-        background:#FFF8DC;
-
-        color:#8A6D3B;
-
-        border:1px solid #F7D774;
-
-        }
-
-
-
         .sticky-col {
 
             position: sticky;
@@ -157,606 +144,274 @@
 
 
 <script type="module">
-
     import {
-
     db,
-
     collection,
-
     getDocs
-
 } from "./firebase.js";
-
     (function migrasiDataOtomatis() {
-
         const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-
         const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
-
         const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
 
-
-
         if (dbLama1.length > 0 || dbLama2.length > 0) {
-
             const mapGabung = new Map();
-
             dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-
             dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-
             dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
 
-
-
             const hasilGabungan = Array.from(mapGabung.values());
-
             localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
-
             localStorage.removeItem('jurnalMeditasiDB');
-
             localStorage.removeItem('meditasi_entries');
-
         }
-
     })();
 
-
-
     const masterMurid = [
-
         "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey",
-
         "Muliani", "Heri Susanto", "Titin", "Harvey", "Meini", "Rini", "Johan",
-
         "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
-
         "Yanti", "Ria", "Enje", "Diana", "Adi", "Neneng", "Suryani"
-
     ];
-
     const role = localStorage.getItem("currentUserRole") || "User";
-
     localStorage.setItem('murid_master', JSON.stringify(masterMurid));
 
-
-
     const tanggalList = [];
-
     
-
     for (let i = 1; i <= 31; i++) {
-
         let day = i < 10 ? '0' + i : i;
-
         tanggalList.push(`2026-07-${day}`);
-
     }
-
     for (let i = 1; i <= 31; i++) {
-
         let day = i < 10 ? '0' + i : i;
-
         tanggalList.push(`2026-08-${day}`);
-
     }
-
-
 
     function normalizeText(v) {
-
         return (v || '').toString().toLowerCase().trim();
-
     }
-
-
 
     function normalizeDate(v) {
-
         if (!v) return '';
-
         return v.toString().slice(0, 10);
-
     }
-
     
-
     function isYesStatus(value) {
-
         return value === "Yes" || value === "Ya";
-
     }
-
-
 
     async function renderMatrix() {
-
         const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-
         const dataFirebase = [];
 
-
-
         snapshot.forEach((docSnap) => {
-
             dataFirebase.push({
-
                 firestoreId: docSnap.id,
-
                 ...docSnap.data()
-
             });
-
         });
-
         const headerRow = document.getElementById('table-headers');
-
         const tbody = document.getElementById('table-matrix-rows');
 
-
-
         let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama Murid</th>`;
-
         tanggalList.forEach(tgl => {
-
             const d = new Date(tgl);
-
             const displayDate = `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
-
             headerHTML += `<th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[95px]">${displayDate}</th>`;
-
         });
-
         
-
         headerRow.innerHTML = headerHTML;
-
         tbody.innerHTML = '';
-
         masterMurid.forEach(nama => {
-
             const tr = document.createElement('tr');
-
             tr.className = "hover:bg-slate-50/50 transition-colors";
-
-
 
             let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
 
-
-
             tanggalList.forEach(tgl => {
-
                 // Diperbaiki: Menggunakan pembanding nama murid yang presisi dan bebas error undefined
-
                 const dataJurnal = dataFirebase.find(item =>
-
                     normalizeDate(item.tanggal) === tgl &&
-
                     normalizeText(item.nama) === normalizeText(nama)
-
                 );
 
-
-
                 let status = "No";
-
                 if (dataJurnal) {
-
                     status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
-
                 }
 
-
-
-const manualSaves =
-JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-
-let isManual = false;
-
-if (manualSaves[nama]) {
-
-    if (typeof manualSaves[nama] === "object") {
-
-        status = manualSaves[nama].status;
-        isManual = manualSaves[nama].manual;
-
-    } else {
-
-        // Untuk kompatibilitas dengan data lama
-        status = manualSaves[nama];
-        isManual = true;
-
-    }
-
-}
-
-
-                let selectClass = "select-no";
-
-                if (status === "Yes") {
-                
-                    if (isManual) {
-                        selectClass = "select-manual";
-                    } else {
-                        selectClass = "select-yes";
-                    }
-                
-                } else {
-                
-                    selectClass = "select-no";
-                
+                const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+                if (manualSaves[nama]) {
+                    status = manualSaves[nama];
                 }
 
+                const selectClass = status === "Yes" ? "select-yes" : "select-no";
 
 if (role === "SukWan" || role === "Titin") {
 
-
-
     rowHTML += `
-
     <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
-
         <select
-
             data-nama="${nama}"
-
             data-tanggal="${tgl}"
-
-            data-original="${status}"
-
-            onchange="markChanged(this); updateColors(this); updateTotalHadir();"
-
+            onchange= updateTotalHadir();"
             class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
 
-
-
             <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
-
             <option value="No" ${status==="No"?"selected":""}>No</option>
 
-
-
         </select>
-
     </td>
-
     `;
-
-
 
 } else {
 
-
-
     rowHTML += `
-
     <td class="px-3 py-2 text-center border-r border-slate-100">
 
-
-
         ${
-
             status==="Yes"
-
-
 
             ? `<span class="bg-cyan-500 text-white px-2 py-1 rounded text-xs font-bold">Yes</span>`
 
-
-
             : `<span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">No</span>`
-
         }
 
-
-
     </td>
-
     `;
-
 }            });
 
-
-
 tr.innerHTML = rowHTML;
-
 tbody.appendChild(tr);
-
-
 
 });
 
-
-
 // ===== TOTAL HADIR =====
-
 const totalRow = document.createElement("tr");
-
 totalRow.className = "bg-indigo-100 font-bold";
 
-
-
 let totalHTML = `
-
 <td class="px-4 py-3 sticky-col text-slate-900">
-
     👥 Total Hadir
-
 </td>
-
 `;
-
-
 
 tanggalList.forEach(tgl => {
 
-
-
     let totalYes = 0;
-
-
 
     masterMurid.forEach(nama => {
 
-
-
         const dataJurnal = dataFirebase.find(item =>
-
             normalizeDate(item.tanggal) === tgl &&
-
             normalizeText(item.nama) === normalizeText(nama)
-
         );
-
-
 
         let status = "No";
 
-
-
         if (dataJurnal) {
-
             status = isYesStatus(dataJurnal.ikut_sesi)
-
                 ? "Yes"
-
                 : "No";
-
         }
-
-
 
         const manualSaves =
-
             JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
 
-
-
         if (manualSaves[nama]) {
-
             status = manualSaves[nama];
-
         }
-
-
 
         if (status === "Yes") {
-
             totalYes++;
-
         }
-
-
 
     });
 
-
-
     totalHTML += `
-
         <td class="text-center border-r border-slate-200 font-bold text-indigo-700">
-
             ${totalYes}
-
         </td>
-
     `;
-
-
 
 });
 
-
-
 totalRow.innerHTML = totalHTML;
-
 tbody.appendChild(totalRow);
 
-
-
 }
 
-    function markChanged(select) {
-
-
-
-    if (select.value !== select.dataset.original) {
-
-        select.dataset.changed = "true";
-
-    } else {
-
-        delete select.dataset.changed;
-
-    }
-
-
-
-}
-
-
-
-function updateColors(element) {
-
-    if (element.value === "Yes") {
-
-        if (element.dataset.changed === "true") {
-
-            element.className =
-            "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-manual";
-
+    function updateColors(element) {
+        if (element.value === "Yes") {
+            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
         } else {
-
-            element.className =
-            "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-yes";
-
+            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
         }
-
-    } else {
-
-        element.className =
-        "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
-
     }
 
-}
     function updateTotalHadir() {
-
-
 
     const totalRow = document.querySelector("tr.bg-indigo-100");
 
-
-
     if (!totalRow) return;
-
-
 
     const totalCells = totalRow.querySelectorAll("td");
 
-
-
     tanggalList.forEach((tgl, index) => {
-
-
 
         let totalYes = 0;
 
-
-
         masterMurid.forEach(nama => {
 
-
-
             const select = document.querySelector(
-
                 `select[data-nama="${nama}"][data-tanggal="${tgl}"]`
-
             );
 
-
-
             if (select) {
-
                 if (select.value === "Yes") {
-
                     totalYes++;
-
                 }
-
             }
+
         });
+
         totalCells[index + 1].innerText = totalYes;
+
     });
+
 }
+    
 
     function saveMatrixChanges() {
-
         const dropdowns = document.querySelectorAll('select[data-nama]');
-
         const dataPerTanggal = {};
 
-
-
         dropdowns.forEach(select => {
-
-
-
-            if (select.dataset.changed !== "true") {
-
-                return;
-
-            }
-
             const nama = select.getAttribute('data-nama');
-
             const tgl = select.getAttribute('data-tanggal');
-
             const nilai = select.value;
 
-
-
             if (!dataPerTanggal[tgl]) {
-
                 dataPerTanggal[tgl] = {};
-
             }
-
-            dataPerTanggal[tgl][nama] = {
-            status: nilai,
-            manual: true
-            };
-
+            dataPerTanggal[tgl][nama] = nilai;
         });
 
         for (const tgl in dataPerTanggal) {
-
             localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
-
         }
 
-
-
         const toast = document.getElementById('toast');
-
         toast.classList.remove('hidden');
-
         setTimeout(() => { toast.classList.add('hidden'); }, 3000);
 
-dropdowns.forEach(select => {
-
-
-
-    select.dataset.original = select.value;
-
-
-
-    delete select.dataset.changed;
-
-
-
-});
-
         renderMatrix();
-
     }
 
-
-
     renderMatrix();
-
-
-
 window.updateColors = updateColors;
-
 window.updateTotalHadir = updateTotalHadir;
-
 window.saveMatrixChanges = saveMatrixChanges;
-
 </script>
-
 </body>
-
 </html>
