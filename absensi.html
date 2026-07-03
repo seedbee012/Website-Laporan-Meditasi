@@ -123,7 +123,15 @@
     }
 
     function renderMatrix() {
-        const db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+        const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+        const dataFirebase = [];
+
+        snapshot.forEach((docSnap) => {
+            dataFirebase.push({
+                firestoreId: docSnap.id,
+                ...docSnap.data()
+            });
+        });
         const headerRow = document.getElementById('table-headers');
         const tbody = document.getElementById('table-matrix-rows');
 
@@ -144,7 +152,7 @@
 
             tanggalList.forEach(tgl => {
                 // Diperbaiki: Menggunakan pembanding nama murid yang presisi dan bebas error undefined
-                const dataJurnal = db.find(item =>
+                const dataJurnal = dataFirebasse.find(item =>
                     normalizeDate(item.tanggal) === tgl &&
                     normalizeText(item.nama) === normalizeText(nama)
                 );
@@ -161,16 +169,40 @@
 
                 const selectClass = status === "Yes" ? "select-yes" : "select-no";
 
-                rowHTML += `
-                    <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
-                        <select data-nama="${nama}" data-tanggal="${tgl}" onchange="updateColors(this)"
-                            class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
-                            <option value="Yes" ${status === 'Yes' ? 'selected' : ''}>Yes</option>
-                            <option value="No" ${status === 'No' ? 'selected' : ''}>No</option>
-                        </select>
-                    </td>
-                `;
-            });
+if (role === "SukWan" || role === "Titin") {
+
+    rowHTML += `
+    <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
+        <select
+            data-nama="${nama}"
+            data-tanggal="${tgl}"
+            onchange="updateColors(this)"
+            class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
+
+            <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
+            <option value="No" ${status==="No"?"selected":""}>No</option>
+
+        </select>
+    </td>
+    `;
+
+} else {
+
+    rowHTML += `
+    <td class="px-3 py-2 text-center border-r border-slate-100">
+
+        ${
+            status==="Yes"
+
+            ? `<span class="bg-cyan-500 text-white px-2 py-1 rounded text-xs font-bold">Yes</span>`
+
+            : `<span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">No</span>`
+        }
+
+    </td>
+    `;
+
+}            });
 
             tr.innerHTML = rowHTML;
             tbody.appendChild(tr);
