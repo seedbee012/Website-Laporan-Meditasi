@@ -182,7 +182,7 @@ if (role === "SukWan" || role === "Titin") {
         <select
             data-nama="${nama}"
             data-tanggal="${tgl}"
-            onchange="updateColors(this)"
+            onchange="updateColors(this); updateTotalHadir();"
             class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
 
             <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
@@ -277,6 +277,39 @@ tbody.appendChild(totalRow);
         }
     }
 
+    function updateTotalHadir() {
+
+    const totalRow = document.querySelector("tr.bg-indigo-100");
+
+    if (!totalRow) return;
+
+    const totalCells = totalRow.querySelectorAll("td");
+
+    tanggalList.forEach((tgl, index) => {
+
+        let totalYes = 0;
+
+        masterMurid.forEach(nama => {
+
+            const select = document.querySelector(
+                `select[data-nama="${nama}"][data-tanggal="${tgl}"]`
+            );
+
+            if (select) {
+                if (select.value === "Yes") {
+                    totalYes++;
+                }
+            }
+
+        });
+
+        totalCells[index + 1].innerText = totalYes;
+
+    });
+
+}
+    
+
     function saveMatrixChanges() {
         const dropdowns = document.querySelectorAll('select[data-nama]');
         const dataPerTanggal = {};
@@ -304,6 +337,10 @@ tbody.appendChild(totalRow);
     }
 
     renderMatrix();
+
+window.updateColors = updateColors;
+window.updateTotalHadir = updateTotalHadir;
+window.saveMatrixChanges = saveMatrixChanges;
 </script>
 </body>
 </html>
