@@ -197,7 +197,7 @@ if (role === "SukWan" || role === "Titin") {
         <select
             data-nama="${nama}"
             data-tanggal="${tgl}"
-            onchange="updateColors(this); updateTotalHadir();"
+            onchange="markChanged(this); updateColors(this); updateTotalHadir();"
             class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
 
             <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
@@ -283,6 +283,15 @@ totalRow.innerHTML = totalHTML;
 tbody.appendChild(totalRow);
 
 }
+    function markChanged(select) {
+
+    if (select.value !== select.dataset.original) {
+        select.dataset.changed = "true";
+    } else {
+        delete select.dataset.changed;
+    }
+
+}
 
     function updateColors(element) {
 
@@ -338,7 +347,11 @@ tbody.appendChild(totalRow);
         const dataPerTanggal = {};
 
         dropdowns.forEach(select => {
-            const nama = select.getAttribute('data-nama');
+
+            if (select.dataset.changed !== "true") {
+                return;
+            }
+                const nama = select.getAttribute('data-nama');
             const tgl = select.getAttribute('data-tanggal');
             const nilai = select.value;
 
