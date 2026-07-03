@@ -8,20 +8,22 @@
     <style>
         body { background-color: #f8fafc; }
 
+        /* WARNA BIRU: Mengisi via Form Index.html / Firebase */
         .select-yes {
             background-color: #06b6d4 !important;
             color: #ffffff !important;
             font-weight: bold;
         }
+        /* WARNA KUNING: Edit Manual */
+        .select-manual {
+            background-color: #fef08a !important; /* Kuning terang Tailwind yellow-200 */
+            color: #854d0e !important; /* Teks cokelat tua yellow-900 */
+            border: 1px solid #fef08a !important;
+            font-weight: bold;
+        }
         .select-no {
             background-color: #f1f5f9 !important;
             color: #475569 !important;
-        }
-        
-        .select-manual{
-        background:#FFF8DC;
-        color:#8A6D3B;
-        border:1px solid #F7D774;
         }
 
         .sticky-col {
@@ -61,6 +63,15 @@
         <div class="mb-6">
             <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">📋 Tabel Kontrol Absensi (1 Juli - 31 Agustus)</h1>
             <p class="text-xs sm:text-sm text-slate-500 mt-1">Geser tabel ke kanan untuk melihat tanggal berikutnya. Klik dropdown untuk mengubah status Yes/No.</p>
+            <!-- Legenda Warna untuk User -->
+            <div class="flex flex-wrap gap-4 mt-3 text-xs">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3 height h-3 inline-block bg-cyan-500 rounded"></span> Isi via Form (Firebase)
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3 height h-3 inline-block bg-yellow-200 border border-yellow-400 rounded"></span> Edit Manual (Lokal)
+                </div>
+            </div>
         </div>
 
         <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-xs custom-scrollbar">
@@ -79,10 +90,11 @@
 
 <script type="module">
     import {
-    db,
-    collection,
-    getDocs
-} from "./firebase.js";
+        db,
+        collection,
+        getDocs
+    } from "./firebase.js";
+
     (function migrasiDataOtomatis() {
         const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
         const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
@@ -163,15 +175,17 @@
             let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
 
             tanggalList.forEach(tgl => {
-                // Diperbaiki: Menggunakan pembanding nama murid yang presisi dan bebas error undefined
                 const dataJurnal = dataFirebase.find(item =>
                     normalizeDate(item.tanggal) === tgl &&
                     normalizeText(item.nama) === normalizeText(nama)
                 );
 
                 let status = "No";
+                let filledViaForm = false;
+
                 if (dataJurnal) {
                     status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
+                    if (status === "Yes") filledViaForm = true; // Ditandai dari Firebase form
                 }
 
                 const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
@@ -179,219 +193,183 @@
                 
                 if (manualSaves[nama]) {
                     status = manualSaves[nama];
-                    isManual = true;
+                    isManual = true; // Ditandai jika ada di override lokal manual
                 }
 
+                // Penentuan class warna dasar dropdown
                 let selectClass = "select-no";
-                
                 if (status === "Yes") {
-                    selectClass = isManual
-                        ? "select-manual"
-                        : "select-yes";
+                    selectClass = isManual ? "select-manual" : "select-yes";
                 }
 
-if (role === "SukWan" || role === "Titin") {
+                if (role === "SukWan" || role === "Titin") {
+                    rowHTML += `
+                    <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
+                        <select
+                            data-nama="${nama}"
+                            data-tanggal="${tgl}"
+                            data-original="${dataJurnal && isYesStatus(dataJurnal.ikut_sesi) ? 'Yes' : 'No'}"
+                            onchange="markChanged(this); updateColors(this); updateTotalHadir();"
+                            class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
+                            <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
+                            <option value="No" ${status==="No"?"selected":""}>No</option>
+                        </select>
+                    </td>
+                    `;
+                } else {
+                    // Mode Lihat: Mengubah tampilan warna label biasa agar singkron dengan keinginan Anda
+                    let badgeClass = "bg-slate-200 text-slate-600";
+                    if (status === "Yes") {
+                        badgeClass = isManual 
+                            ? "bg-yellow-200 text-yellow-900 border border-yellow-300" // Kuning untuk Manual
+                            : "bg-cyan-500 text-white"; // Biru/Sian untuk isi Form asli
+                    }
 
-    rowHTML += `
-    <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
-        <select
-            data-nama="${nama}"
-            data-tanggal="${tgl}"
-            data-original="${status}"
-            onchange="markChanged(this); updateColors(this); updateTotalHadir();"
-            class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
-
-            <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
-            <option value="No" ${status==="No"?"selected":""}>No</option>
-
-        </select>
-    </td>
-    `;
-
-} else {
-
-    rowHTML += `
-    <td class="px-3 py-2 text-center border-r border-slate-100">
-
-        ${
-            status==="Yes"
-
-            ? `<span class="bg-cyan-500 text-white px-2 py-1 rounded text-xs font-bold">Yes</span>`
-
-            : `<span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">No</span>`
-        }
-
-    </td>
-    `;
-}            });
-
-tr.innerHTML = rowHTML;
-tbody.appendChild(tr);
-
-});
-
-// ===== TOTAL HADIR =====
-const totalRow = document.createElement("tr");
-totalRow.className = "bg-indigo-100 font-bold";
-
-let totalHTML = `
-<td class="px-4 py-3 sticky-col text-slate-900">
-    👥 Total Hadir
-</td>
-`;
-
-tanggalList.forEach(tgl => {
-
-    let totalYes = 0;
-
-    masterMurid.forEach(nama => {
-
-        const dataJurnal = dataFirebase.find(item =>
-            normalizeDate(item.tanggal) === tgl &&
-            normalizeText(item.nama) === normalizeText(nama)
-        );
-
-        let status = "No";
-
-        if (dataJurnal) {
-            status = isYesStatus(dataJurnal.ikut_sesi)
-                ? "Yes"
-                : "No";
-        }
-
-        const manualSaves =
-            JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-
-        if (manualSaves[nama]) {
-            status = manualSaves[nama];
-        }
-
-        if (status === "Yes") {
-            totalYes++;
-        }
-
-    });
-
-    totalHTML += `
-        <td class="text-center border-r border-slate-200 font-bold text-indigo-700">
-            ${totalYes}
-        </td>
-    `;
-
-});
-
-totalRow.innerHTML = totalHTML;
-tbody.appendChild(totalRow);
-
-}
-    function markChanged(select) {
-
-    if (select.value !== select.dataset.original) {
-        select.dataset.changed = "true";
-    } else {
-        delete select.dataset.changed;
-    }
-
-}
-
-function updateColors(element) {
-
-    if (element.value === "Yes") {
-
-        if (element.dataset.changed === "true") {
-
-            element.className =
-            "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-manual";
-
-        } else {
-
-            element.className =
-            "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-yes";
-
-        }
-
-    } else {
-
-        element.className =
-        "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
-
-    }
-
-}
-    function updateTotalHadir() {
-
-    const totalRow = document.querySelector("tr.bg-indigo-100");
-
-    if (!totalRow) return;
-
-    const totalCells = totalRow.querySelectorAll("td");
-
-    tanggalList.forEach((tgl, index) => {
-
-        let totalYes = 0;
-
-        masterMurid.forEach(nama => {
-
-            const select = document.querySelector(
-                `select[data-nama="${nama}"][data-tanggal="${tgl}"]`
-            );
-
-            if (select) {
-                if (select.value === "Yes") {
-                    totalYes++;
+                    rowHTML += `
+                    <td class="px-3 py-2 text-center border-r border-slate-100">
+                        <span class="${badgeClass} px-2 py-1 rounded text-xs font-bold">${status}</span>
+                    </td>
+                    `;
                 }
-            }
+            });
 
+            tr.innerHTML = rowHTML;
+            tbody.appendChild(tr);
         });
 
-        totalCells[index + 1].innerText = totalYes;
+        // ===== TOTAL HADIR =====
+        const totalRow = document.createElement("tr");
+        totalRow.className = "bg-indigo-100 font-bold";
 
-    });
+        let totalHTML = `
+        <td class="px-4 py-3 sticky-col text-slate-900">
+            👥 Total Hadir
+        </td>
+        `;
 
-}
-    
+        tanggalList.forEach(tgl => {
+            let totalYes = 0;
+
+            masterMurid.forEach(nama => {
+                const dataJurnal = dataFirebase.find(item =>
+                    normalizeDate(item.tanggal) === tgl &&
+                    normalizeText(item.nama) === normalizeText(nama)
+                );
+
+                let status = "No";
+
+                if (dataJurnal) {
+                    status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
+                }
+
+                const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+
+                if (manualSaves[nama]) {
+                    status = manualSaves[nama];
+                }
+
+                if (status === "Yes") {
+                    totalYes++;
+                }
+            });
+
+            totalHTML += `
+                <td class="text-center border-r border-slate-200 font-bold text-indigo-700">
+                    ${totalYes}
+                </td>
+            `;
+        });
+
+        totalRow.innerHTML = totalHTML;
+        tbody.appendChild(totalRow);
+    }
+
+    function markChanged(select) {
+        if (select.value !== select.dataset.original) {
+            select.dataset.changed = "true";
+        } else {
+            delete select.dataset.changed;
+        }
+    }
+
+    function updateColors(element) {
+        if (element.value === "Yes") {
+            // Jika status dirubah manual saat live session oleh admin
+            if (element.dataset.changed === "true") {
+                element.className = "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-manual";
+            } else {
+                element.className = "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-yes";
+            }
+        } else {
+            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
+        }
+    }
+
+    function updateTotalHadir() {
+        const totalRow = document.querySelector("tr.bg-indigo-100");
+        if (!totalRow) return;
+
+        const totalCells = totalRow.querySelectorAll("td");
+
+        tanggalList.forEach((tgl, index) => {
+            let totalYes = 0;
+
+            masterMurid.forEach(nama => {
+                const select = document.querySelector(
+                    `select[data-nama="${nama}"][data-tanggal="${tgl}"]`
+                );
+
+                if (select) {
+                    if (select.value === "Yes") {
+                        totalYes++;
+                    }
+                }
+            });
+
+            totalCells[index + 1].innerText = totalYes;
+        });
+    }
 
     function saveMatrixChanges() {
         const dropdowns = document.querySelectorAll('select[data-nama]');
-        const dataPerTanggal = {};
-
+        
         dropdowns.forEach(select => {
-
-            if (select.dataset.changed !== "true") {
-                return;
-            }
             const nama = select.getAttribute('data-nama');
             const tgl = select.getAttribute('data-tanggal');
             const nilai = select.value;
 
-            if (!dataPerTanggal[tgl]) {
-                dataPerTanggal[tgl] = {};
-            }
-            dataPerTanggal[tgl][nama] = nilai;
-        });
+            // Mengambil database lokal per tanggal yang sudah ada
+            const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
 
-        for (const tgl in dataPerTanggal) {
-            localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
-        }
+            if (select.dataset.changed === "true") {
+                // Simpan perubahan ke lokal jika diubah oleh admin
+                manualSaves[nama] = nilai;
+                localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(manualSaves));
+            } else if (select.value === select.dataset.original) {
+                // Jika dikembalikan ke nilai awal (sinkron Firebase kembali), hapus jejak manualnya
+                if (manualSaves[nama]) {
+                    delete manualSaves[nama];
+                    if (Object.keys(manualSaves).length === 0) {
+                        localStorage.removeItem(`absensi_manual_${tgl}`);
+                    } else {
+                        localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(manualSaves));
+                    }
+                }
+            }
+        });
 
         const toast = document.getElementById('toast');
         toast.classList.remove('hidden');
         setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-dropdowns.forEach(select => {
 
-    select.dataset.original = select.value;
-
-    delete select.dataset.changed;
-
-});
         renderMatrix();
     }
 
     renderMatrix();
 
-window.updateColors = updateColors;
-window.updateTotalHadir = updateTotalHadir;
-window.saveMatrixChanges = saveMatrixChanges;
+    window.updateColors = updateColors;
+    window.updateTotalHadir = updateTotalHadir;
+    window.saveMatrixChanges = saveMatrixChanges;
 </script>
 </body>
 </html>
