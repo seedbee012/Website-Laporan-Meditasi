@@ -254,7 +254,7 @@ if (role === "SukWan" || role === "Titin") {
         <select
             data-nama="${nama}"
             data-tanggal="${tgl}"
-            onchange= updateTotalHadir();"
+            onchange= "updateColors(this); updateTotalHadir();"
             class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
 
             <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
@@ -322,12 +322,6 @@ if (manualSaves[nama]) {
     status = manualSaves[nama];
 }
 
-let selectClass =
-    status === "Yes"
-        ? "select-yes"
-        : "select-no";
-    });
-
     totalHTML += `
         <td class="text-center border-r border-slate-200 font-bold text-indigo-700">
             ${totalYes}
@@ -369,26 +363,33 @@ function updateColors(element) {
 
         let totalYes = 0;
 
-        masterMurid.forEach(nama => {
+masterMurid.forEach(nama => {
 
-            const select = document.querySelector(
-                `select[data-nama="${nama}"][data-tanggal="${tgl}"]`
-            );
+    const dataJurnal = dataFirebase.find(item =>
+        normalizeDate(item.tanggal) === tgl &&
+        normalizeText(item.nama) === normalizeText(nama)
+    );
 
-            if (select) {
-                if (select.value === "Yes") {
-                    totalYes++;
-                }
-            }
+    let status = "No";
 
-        });
+    if (dataJurnal) {
+        status = isYesStatus(dataJurnal.ikut_sesi)
+            ? "Yes"
+            : "No";
+    }
 
-        totalCells[index + 1].innerText = totalYes;
+    const manualSaves =
+        JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
 
-    });
+    if (manualSaves[nama]) {
+        status = manualSaves[nama];
+    }
 
-}
-    
+    if (status === "Yes") {
+        totalYes++;
+    }
+
+});    
 
     function saveMatrixChanges() {
         const dropdowns = document.querySelectorAll('select[data-nama]');
