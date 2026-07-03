@@ -17,6 +17,12 @@
             background-color: #f1f5f9 !important;
             color: #475569 !important;
         }
+        
+        .select-manual{
+        background:#FFF8DC;
+        color:#8A6D3B;
+        border:1px solid #F7D774;
+        }
 
         .sticky-col {
             position: sticky;
@@ -169,11 +175,20 @@
                 }
 
                 const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
+                let isManual = false;
+                
                 if (manualSaves[nama]) {
                     status = manualSaves[nama];
+                    isManual = true;
                 }
 
-                const selectClass = status === "Yes" ? "select-yes" : "select-no";
+                let selectClass = "select-no";
+                
+                if (status === "Yes") {
+                    selectClass = isManual
+                        ? "select-manual"
+                        : "select-yes";
+                }
 
 if (role === "SukWan" || role === "Titin") {
 
@@ -270,12 +285,20 @@ tbody.appendChild(totalRow);
 }
 
     function updateColors(element) {
-        if (element.value === "Yes") {
-            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
-        } else {
-            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
-        }
+
+    if (element.value === "Yes") {
+
+        element.className =
+        "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-manual";
+
+    } else {
+
+        element.className =
+        "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
+
     }
+
+}
 
     function updateTotalHadir() {
 
