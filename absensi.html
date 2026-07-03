@@ -71,7 +71,12 @@
         ✅ Perubahan absensi berhasil disimpan ke sistem!
     </div>
 
-<script>
+<script type="module">
+    import {
+    db,
+    collection,
+    getDocs
+} from "./firebase.js";
     (function migrasiDataOtomatis() {
         const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
         const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
@@ -122,7 +127,7 @@
         return value === "Yes" || value === "Ya";
     }
 
-    function renderMatrix() {
+    async function renderMatrix() {
         const snapshot = await getDocs(collection(db, "laporanMeditasi"));
         const dataFirebase = [];
 
