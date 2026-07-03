@@ -197,6 +197,7 @@ if (role === "SukWan" || role === "Titin") {
         <select
             data-nama="${nama}"
             data-tanggal="${tgl}"
+            data-original="${status}"
             onchange="markChanged(this); updateColors(this); updateTotalHadir();"
             class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
 
@@ -293,12 +294,21 @@ tbody.appendChild(totalRow);
 
 }
 
-    function updateColors(element) {
+function updateColors(element) {
 
     if (element.value === "Yes") {
 
-        element.className =
-        "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-manual";
+        if (element.dataset.changed === "true") {
+
+            element.className =
+            "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-manual";
+
+        } else {
+
+            element.className =
+            "w-full text-center rounded px-1 py-1 text-xs border outline-none cursor-pointer font-semibold transition-all select-yes";
+
+        }
 
     } else {
 
@@ -308,7 +318,6 @@ tbody.appendChild(totalRow);
     }
 
 }
-
     function updateTotalHadir() {
 
     const totalRow = document.querySelector("tr.bg-indigo-100");
@@ -351,7 +360,7 @@ tbody.appendChild(totalRow);
             if (select.dataset.changed !== "true") {
                 return;
             }
-                const nama = select.getAttribute('data-nama');
+            const nama = select.getAttribute('data-nama');
             const tgl = select.getAttribute('data-tanggal');
             const nilai = select.value;
 
@@ -368,7 +377,13 @@ tbody.appendChild(totalRow);
         const toast = document.getElementById('toast');
         toast.classList.remove('hidden');
         setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+dropdowns.forEach(select => {
 
+    select.dataset.original = select.value;
+
+    delete select.dataset.changed;
+
+});
         renderMatrix();
     }
 
