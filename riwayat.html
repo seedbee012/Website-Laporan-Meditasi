@@ -244,14 +244,7 @@ try {
                     normalizeText(item.nama).includes(searchNama)
                 );
             }                
-            else {
-                    tbody.innerHTML = '';
-                    emptyState.classList.remove('hidden');
-                    emptyText.innerText = "Silakan ketik nama lengkap Anda di kotak filter atas untuk memunculkan riwayat pribadi.";
-                    return;
-                }
-            }
-
+  
             dataTampil.sort((a, b) => (b.id || 0) - (a.id || 0));
 
             if (dataTampil.length === 0) {
