@@ -275,11 +275,11 @@ async function simpanJurnal(event) {
             const pilihanSesi = document.getElementById('input-sesi').value;
             const statusAbsensi = (pilihanSesi === 'Ya') ? 'Yes' : 'No';
 
-            let db = JSON.parse(localStorage.getItem('meditasi_db')) || [];
             const urlParams = new URLSearchParams(window.location.search);
             const editId = urlParams.get('editId');
 
-            if (editId) {const docRef = doc(db, "laporanMeditasi", editId);i
+            if (editId) {
+                const docRef = doc(db, "laporanMeditasi", editId);
                 const dataUpdate = {
                     ikut_sesi: statusAbsensi,
                     durasi_jalan: document.getElementById('input-jalan').value,
