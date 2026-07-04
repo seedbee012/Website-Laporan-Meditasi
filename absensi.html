@@ -115,7 +115,6 @@
         return (v || '').toString().toLowerCase().trim();
     }
 
-    // Mengambil YYYY-MM-DD dengan aman tanpa peduli format timestamp Firebase atau string mentah
     function normalizeDate(v) {
         if (!v) return '';
         return v.toString().slice(0, 10);
@@ -142,7 +141,7 @@
         const headerRow = document.getElementById('table-headers');
         const tbody = document.getElementById('table-matrix-rows');
 
-        // Render Headers
+        // Render Headers (Sudah diubah menjadi "Nama")
         let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama</th>`;
         tanggalList.forEach(tgl => {
             const d = new Date(tgl);
@@ -204,7 +203,7 @@
             tbody.appendChild(tr);
         });
 
-        // ===== TOTAL HADIR (BAGIAN BAWAH TABEL) =====
+        // ===== TOTAL HADIR =====
         const totalRow = document.createElement("tr");
         totalRow.className = "bg-indigo-100 font-bold text-indigo-700";
 
@@ -261,7 +260,6 @@
 
         const totalCells = totalRow.querySelectorAll("td");
         
-        // Ambil data dropdown terkini di halaman untuk kalkulasi langsung tanpa perlu reload data Firebase
         tanggalList.forEach((tgl, index) => {
             let totalYes = 0;
 
@@ -270,7 +268,6 @@
                 if (dropdown) {
                     if (dropdown.value === "Yes") totalYes++;
                 } else {
-                    // Fallback untuk mode read-only (bukan SukWan/Titin) yang tidak menggunakan select element
                     const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
                     if (manualSaves[nama] === "Yes") {
                         totalYes++;
@@ -278,7 +275,6 @@
                 }
             });
 
-            // index + 1 karena cell indeks ke-0 digunakan untuk teks "👥 Total Hadir"
             if (totalCells[index + 1]) {
                 totalCells[index + 1].innerText = totalYes;
             }
@@ -308,14 +304,11 @@
         toast.classList.remove('hidden');
         setTimeout(() => { toast.classList.add('hidden'); }, 3000);
         
-        // Memuat ulang matriks untuk memastikan data tersinkronisasi kembali
         renderMatrix();
     }
 
-    // Inisialisasi awal saat halaman dibuka
     renderMatrix();
 
-    // Ikat ke scope window agar bisa dipanggil oleh inline HTML `onchange` dan `onclick`
     window.updateColors = updateColors;
     window.updateTotalHadir = updateTotalHadir;
     window.saveMatrixChanges = saveMatrixChanges;
