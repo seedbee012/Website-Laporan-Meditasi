@@ -72,8 +72,16 @@
     </div>
 
 <script type="module">
-    import { db, collection, getDocs } from "./firebase.js";
+    import {
+        db,
+        collection,
+        getDocs,
+        addDoc,
+        updateDoc,
+        doc
+    } from "./firebase.js";
 
+    // Jalankan migrasi sekali saja jika masih ada data lama di localStorage murid
     (function migrasiDataOtomatis() {
         const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
         const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
@@ -101,6 +109,7 @@
     const role = localStorage.getItem("currentUserRole") || "User";
     localStorage.setItem('murid_master', JSON.stringify(masterMurid));
 
+    // Generate list tanggal untuk bulan Juli dan Agustus 2026
     const tanggalList = [];
     for (let i = 1; i <= 31; i++) {
         let day = i < 10 ? '0' + i : i;
@@ -115,6 +124,7 @@
         return (v || '').toString().toLowerCase().trim();
     }
 
+    // Normalisasi untuk mengambil format YYYY-MM-DD
     function normalizeDate(v) {
         if (!v) return '';
         return v.toString().slice(0, 10);
@@ -124,6 +134,7 @@
         return value === "Yes" || value === "Ya";
     }
 
+    // 1. RENDER MATRIX (Murni ambil data dari Firebase)
     async function renderMatrix() {
         let dataFirebase = [];
         try {
@@ -135,13 +146,13 @@
                 });
             });
         } catch (err) {
-            console.error("Gagal memuat data Firebase, menggunakan fallback data kosong:", err);
+            console.error("Gagal memuat data Firebase:", err);
         }
 
         const headerRow = document.getElementById('table-headers');
         const tbody = document.getElementById('table-matrix-rows');
 
-        // Render Headers (Sudah diubah menjadi "Nama")
+        // Render Headers Tanggal (Sudah diubah menjadi "Nama" di paling kiri)
         let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama</th>`;
         tanggalList.forEach(tgl => {
             const d = new Date(tgl);
@@ -150,7 +161,7 @@
         });
         headerRow.innerHTML = headerHTML;
 
-        // Render Rows Murid
+        // Render Baris Murid
         tbody.innerHTML = '';
         masterMurid.forEach(nama => {
             const tr = document.createElement('tr');
@@ -169,13 +180,9 @@
                     status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
                 }
 
-                const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-                if (manualSaves[nama]) {
-                    status = manualSaves[nama];
-                }
-
                 const selectClass = status === "Yes" ? "select-yes" : "select-no";
 
+                // Jika rolenya admin (SukWan / Titin), tampilkan Dropdown Interaktif
                 if (role === "SukWan" || role === "Titin") {
                     rowHTML += `
                     <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
@@ -189,6 +196,7 @@
                         </select>
                     </td>`;
                 } else {
+                    // Jika user biasa, hanya tampilkan badge text
                     rowHTML += `
                     <td class="px-3 py-2 text-center border-r border-slate-100">
                         ${status === "Yes" 
@@ -203,7 +211,7 @@
             tbody.appendChild(tr);
         });
 
-        // ===== TOTAL HADIR =====
+        // RENDER TOTAL HADIR DI PALING BAWAH
         const totalRow = document.createElement("tr");
         totalRow.className = "bg-indigo-100 font-bold text-indigo-700";
 
@@ -214,24 +222,12 @@
 
         tanggalList.forEach(tgl => {
             let totalYes = 0;
-
             masterMurid.forEach(nama => {
                 const dataJurnal = dataFirebase.find(item =>
                     normalizeDate(item.tanggal) === tgl &&
                     normalizeText(item.nama) === normalizeText(nama)
                 );
-
-                let status = "No";
-                if (dataJurnal) {
-                    status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
-                }
-
-                const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-                if (manualSaves[nama]) {
-                    status = manualSaves[nama];
-                }
-
-                if (status === "Yes") {
+                if (dataJurnal && isYesStatus(dataJurnal.ikut_sesi)) {
                     totalYes++;
                 }
             });
@@ -246,6 +242,7 @@
         tbody.appendChild(totalRow);
     }
 
+    // 2. UPDATE WARNA DROPDOWN SAAT DI-KLIK (Lokal di UI)
     function updateColors(element) {
         if (element.value === "Yes") {
             element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
@@ -254,6 +251,7 @@
         }
     }
 
+    // 3. UPDATE TOTAL HADIR SECARA REALTIME SAAT DROPDOWN DIGANTI (Membaca dari layar)
     function updateTotalHadir() {
         const totalRow = document.querySelector("tr.bg-indigo-100");
         if (!totalRow) return;
@@ -262,16 +260,10 @@
         
         tanggalList.forEach((tgl, index) => {
             let totalYes = 0;
-
             masterMurid.forEach(nama => {
                 const dropdown = document.querySelector(`select[data-nama="${nama}"][data-tanggal="${tgl}"]`);
-                if (dropdown) {
-                    if (dropdown.value === "Yes") totalYes++;
-                } else {
-                    const manualSaves = JSON.parse(localStorage.getItem(`absensi_manual_${tgl}`)) || {};
-                    if (manualSaves[nama] === "Yes") {
-                        totalYes++;
-                    }
+                if (dropdown && dropdown.value === "Yes") {
+                    totalYes++;
                 }
             });
 
@@ -281,34 +273,68 @@
         });
     }
 
-    function saveMatrixChanges() {
+    // 4. SIMPAN PERUBAHAN MANUAL LANGSUNG KE FIREBASE
+    async function saveMatrixChanges() {
         const dropdowns = document.querySelectorAll('select[data-nama]');
-        const dataPerTanggal = {};
+        console.log("Sedang menyimpan absensi manual ke Firebase...");
 
-        dropdowns.forEach(select => {
-            const nama = select.getAttribute('data-nama');
-            const tgl = select.getAttribute('data-tanggal');
-            const nilai = select.value;
+        try {
+            // Ambil data terbaru dari Firebase dulu untuk pencocokan ID dokumen
+            const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+            const dataFirebase = [];
+            snapshot.forEach((docSnap) => {
+                dataFirebase.push({
+                    firestoreId: docSnap.id,
+                    ...docSnap.data()
+                });
+            });
 
-            if (!dataPerTanggal[tgl]) {
-                dataPerTanggal[tgl] = {};
+            // Loop semua dropdown di layar untuk dimasukkan/diupdate ke Firebase
+            for (const select of dropdowns) {
+                const nama = select.getAttribute('data-nama');
+                const tgl = select.getAttribute('data-tanggal');
+                const nilai = select.value; 
+
+                // Cari apakah kombinasi nama & tanggal sudah ada di Firestore
+                const dataSama = dataFirebase.find(item =>
+                    normalizeDate(item.tanggal) === tgl &&
+                    normalizeText(item.nama) === normalizeText(nama)
+                );
+
+                if (dataSama) {
+                    // JIKA SUDAH ADA: Update statusnya di Firebase kalau ada perubahan nilai
+                    if (dataSama.ikut_sesi !== nilai) {
+                        const docRef = doc(db, "laporanMeditasi", dataSama.firestoreId);
+                        await updateDoc(docRef, { ikut_sesi: nilai });
+                    }
+                } else {
+                    // JIKA BELUM ADA: Buat dokumen baru langsung di Firebase
+                    await addDoc(collection(db, "laporanMeditasi"), {
+                        nama: nama,
+                        tanggal: tgl,
+                        ikut_sesi: nilai
+                    });
+                }
             }
-            dataPerTanggal[tgl][nama] = nilai;
-        });
 
-        for (const tgl in dataPerTanggal) {
-            localStorage.setItem(`absensi_manual_${tgl}`, JSON.stringify(dataPerTanggal[tgl]));
+            // Munculkan toast penanda sukses
+            const toast = document.getElementById('toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+            
+            // Render ulang matrix murni dari data Firebase yang paling baru
+            await renderMatrix();
+
+        } catch (error) {
+            console.error("Gagal menyimpan ke Firebase:", error);
+            alert("Gagal menyimpan data, periksa koneksi internet.");
         }
-
-        const toast = document.getElementById('toast');
-        toast.classList.remove('hidden');
-        setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-        
-        renderMatrix();
     }
 
+    // Panggil fungsi render utama saat halaman dimuat
     renderMatrix();
 
+    // Daftarkan fungsi ke window objek agar bisa dipanggil oleh atribut onchange html inline
     window.updateColors = updateColors;
     window.updateTotalHadir = updateTotalHadir;
     window.saveMatrixChanges = saveMatrixChanges;
