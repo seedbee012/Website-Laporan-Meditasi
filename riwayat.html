@@ -30,6 +30,13 @@
             </div>
             
             <div id="admin-filter-box" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 w-full sm:w-auto">
+                <div class="mb-4">
+                    <button
+                        onclick="cleanupPlaceholderRange()"
+                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
+                        🧹 Cleanup Placeholder Data
+                    </button>
+                </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                     <label class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
                     <input type="text" id="search-nama" oninput="renderRiwayat()" placeholder="Cari nama..." class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 w-full sm:w-60">
@@ -55,31 +62,6 @@
                         <th class="p-3 min-w-[220px] bg-indigo-50/50">Review saat Sesi Sharing</th>
                         <th class="p-3 min-w-[200px] bg-emerald-50/50">PR/Target Individu (Ci Suk Wan)</th>
                         <th class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">Aksi</th>
-                        <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
-    <div class="flex gap-2 justify-center">
-
-        <button
-            onclick="bukaHalamanEdit('${item.firestoreId}')"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-            📝 Edit
-        </button>
-
-        <button
-            onclick="hapusLaporan('${item.firestoreId}')"
-            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-            🗑️ Hapus
-        </button>
-<button
-onclick="applyPRUntil(
-'${item.firestoreId}',
-'${item.nama}',
-'${item.tanggal}'
-)"
-class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-1 rounded-lg">
-📅 PR
-</button>
-    </div>
-</td>
                     </tr>
                 </thead>
                 <tbody id="tbody-riwayat" class="divide-y divide-slate-200 text-slate-600"></tbody>
@@ -92,297 +74,255 @@ class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-
 
 <script type="module">
 import {
-db,
-collection,
-getDocs,
-doc,
-deleteDoc,
-updateDoc
+    db,
+    collection,
+    getDocs,
+    doc,
+    deleteDoc,
+    updateDoc
 } from "./firebase.js";
+
 console.log("riwayat.js loaded");
-        (function migrasiDataOtomatis() {
-            const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-            const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
-            const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
 
-            if (dbLama1.length > 0 || dbLama2.length > 0) {
-                const mapGabung = new Map();
-                dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-                dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-                dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+(function migrasiDataOtomatis() {
+    const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
+    const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
+    const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
 
-                localStorage.setItem('meditasi_db', JSON.stringify(Array.from(mapGabung.values())));
-                localStorage.removeItem('jurnalMeditasiDB');
-                localStorage.removeItem('meditasi_entries');
-            }
-        })();
+    if (dbLama1.length > 0 || dbLama2.length > 0) {
+        const mapGabung = new Map();
+        dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+        dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
+        dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
 
-        function getRole() {
-            return localStorage.getItem('currentUserRole') || 'User';
-        }
+        localStorage.setItem('meditasi_db', JSON.stringify(Array.from(mapGabung.values())));
+        localStorage.removeItem('jurnalMeditasiDB');
+        localStorage.removeItem('meditasi_entries');
+    }
+})();
 
-        function normalizeText(v) {
-            return (v || '').toString().toLowerCase().trim();
-        }
+function getRole() {
+    return localStorage.getItem('currentUserRole') || 'User';
+}
 
-        function normalizeDate(v) {
-            if (!v) return '';
-            return v.toString().slice(0, 10);
-        }
-async function applyPRUntil(firestoreId,nama,tanggalMulai){
+function normalizeText(v) {
+    return (v || '').toString().toLowerCase().trim();
+}
 
-    const sampaiTanggal = prompt(
-        "Apply PR until (YYYY-MM-DD)"
-    );
-
+// 1. FUNGSI APPLY PR (Berdiri Sendiri)
+async function applyPRUntil(firestoreId, nama, tanggalMulai){
+    const sampaiTanggal = prompt("Apply PR until (YYYY-MM-DD)");
     if(!sampaiTanggal) return;
 
-    const prBaru = prompt(
-        "Enter the PR"
-    );
-
+    const prBaru = prompt("Enter the PR");
     if(prBaru===null) return;
 
-    const snapshot = await getDocs(
-        collection(db,"laporanMeditasi")
-    );
+    const snapshot = await getDocs(collection(db, "laporanMeditasi"));
 
     for(const laporan of snapshot.docs){
-
         const data = laporan.data();
-
         if(
             data.nama===nama &&
             data.tanggal>=tanggalMulai &&
             data.tanggal<=sampaiTanggal
         ){
-
             await updateDoc(
-                doc(db,"laporanMeditasi",laporan.id),
-                {
-                    pr_individu:prBaru
-                }
+                doc(db, "laporanMeditasi", laporan.id),
+                { pr_individu: prBaru }
             );
+        }
+    }
+    alert("✅ PR applied!");
+    renderRiwayat();
+}
 
+// 2. FUNGSI CLEANUP (Sudah Dipisah Keluar & Mandiri)
+async function cleanupPlaceholderRange(){
+    const mulai = prompt("Delete placeholder FROM date (YYYY-MM-DD)\nContoh: 2026-07-10");
+    if(!mulai) return;
+
+    const selesai = prompt("Delete placeholder UNTIL date (YYYY-MM-DD)\nContoh: 2026-08-31");
+    if(!selesai) return;
+
+    if(!confirm(`Hapus data hantu/placeholder dari tanggal:\n${mulai} s/d ${selesai}?\n\nHanya data kosong yang akan dihapus.`)) return;
+
+    try {
+        const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+        let deleted = 0;
+
+        for(const laporan of snapshot.docs){
+            const data = laporan.data();
+
+            const placeholder =
+                (data.durasi_jalan==="-" || !data.durasi_jalan) &&
+                (data.durasi_duduk==="-" || !data.durasi_duduk) &&
+                (data.frekuensi_wandering==="-" || !data.frekuensi_wandering) &&
+                (data.kembali_cepat==="-" || !data.kembali_cepat) &&
+                (data.durasi_hold==="-" || !data.durasi_hold) &&
+                (data.durasi_halus==="-" || !data.durasi_halus) &&
+                (data.muncul_cahaya==="-" || !data.muncul_cahaya) &&
+                (data.pengalaman==="-" || !data.pengalaman) &&
+                (data.review_sharing==="-" || !data.review_sharing);
+
+            if(
+                data.tanggal>=mulai &&
+                data.tanggal<=selesai &&
+                placeholder
+            ){
+                await deleteDoc(doc(db, "laporanMeditasi", laporan.id));
+                deleted++;
+            }
         }
 
+        alert(`✅ Berhasil menghapus ${deleted} data placeholder!`);
+        renderRiwayat();
+    } catch (err) {
+        console.error(err);
+        alert("❌ Terjadi kesalahan saat menghapus data.");
     }
-
-    alert("✅ PR applied!");
-
-    renderRiwayat();
-
 }
 
 async function renderRiwayat() {
-            const role = getRole();
-            const tbody = document.getElementById('tbody-riwayat');
-            const emptyState = document.getElementById('empty-state');
-            const emptyText = document.getElementById('empty-text');
-            const statusRole = document.getElementById('status-role');
-            const keteranganAkses = document.getElementById('keterangan-akses');
-            const adminFilterBox = document.getElementById('admin-filter-box');
-            const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
+    const role = getRole();
+    const tbody = document.getElementById('tbody-riwayat');
+    const emptyState = document.getElementById('empty-state');
+    const emptyText = document.getElementById('empty-text');
+    const statusRole = document.getElementById('status-role');
+    const keteranganAkses = document.getElementById('keterangan-akses');
+    const adminFilterBox = document.getElementById('admin-filter-box');
+    const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
 
-let dataFirebase = [];
-
-try {
-
-    const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-
-    console.log("Documents found:", snapshot.size);
-
-    snapshot.forEach((docSnap) => {
-        dataFirebase.push({
-            firestoreId: docSnap.id,
-            ...docSnap.data()
-        });
-    });
-
-    console.table(dataFirebase);
-
-} catch (error) {
-
-    console.error("Firebase Error:", error);
-
-    alert("❌ Gagal mengambil data dari Firebase.");
-
-    return;
-}
-    
-    if (role === 'SukWan' || role === 'Titin') {
-                statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
-                keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
-                adminFilterBox.classList.remove('hidden');
-            } else {
-                statusRole.innerText = "Mode: Pengguna Umum";
-                keteranganAkses.innerText ="Ketik nama pada kotak pencarian untuk melihat riwayat meditasi.";
-                adminFilterBox.classList.remove('hidden');
-                const label = adminFilterBox.querySelector('label');
-                if (label) label.innerText = "Masukkan Nama Anda:";
-            }
-
-            let dataTampil = [];
-
-            if (role === 'SukWan' || role === 'Titin') {
-                dataTampil = searchNama
-                ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama))
-                : dataFirebase;
-            } else {
-            
-                if (searchNama === '') {
-            
-                    tbody.innerHTML = '';
-                    emptyState.classList.remove('hidden');
-                    emptyText.innerText = "Silakan ketik nama pada kotak pencarian.";
-            
-                    return;
-            
-                }
-            
-                dataTampil = dataFirebase.filter(item =>
-                    normalizeText(item.nama).includes(searchNama)
-                );
-            }                
-  
-            dataTampil.sort((a, b) => (b.id || 0) - (a.id || 0));
-
-            if (dataTampil.length === 0) {
-                tbody.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                emptyText.innerText = "Tidak ada laporan meditasi yang ditemukan.";
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-
-            let htmlRows = '';
-            dataTampil.forEach(item => {
-                const isIkut = item.ikut_sesi === 'Ya' || item.ikut_sesi === 'Yes';
-                const badgeSesi = isIkut
-                    ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-medium">Ya</span>`
-                    : `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-medium">Tidak</span>`;
-
-                htmlRows += `
-                    <tr class="hover:bg-slate-50/80 transition-colors">
-                        <td class="p-3 font-medium text-slate-900 whitespace-nowrap">${item.tanggal || '-'}</td>
-                        <td class="p-3 font-semibold text-slate-800 whitespace-nowrap">${item.nama || 'Tanpa Nama'}</td>
-                        <td class="p-3 text-center">${badgeSesi}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_jalan || '-'}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_duduk || '-'}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.frekuensi_wandering || '-'}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.kembali_cepat || '-'}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_hold || '-'}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.durasi_halus || '-'}</td>
-                        <td class="p-3 text-xs whitespace-pre-line">${item.muncul_cahaya || '-'}</td>
-                        <td class="p-3 text-xs italic text-slate-500 whitespace-pre-line">"${item.pengalaman || '-'}"</td>
-                        <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
-                        <td class="p-3 bg-emerald-50/30 border-l border-emerald-100">
-                        
-                        ${
-                        (role === "SukWan" || role === "Titin")
-                        ?
-                        
-                        `
-                        <textarea
-                        id="pr-${item.firestoreId}"
-                        class="w-full border rounded p-2 text-xs"
-                        rows="3">${item.pr_individu || ""}</textarea>
-                        
-                        <button
-                            onclick="simpanPR('${item.firestoreId}')"
-                        class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded">
-                        💾 Simpan
-                        </button>
-                        `
-                        
-                        :
-                        
-                        `<div class="text-xs whitespace-pre-line font-medium">
-                        ${item.pr_individu || "Belum ada PR."}
-                        </div>`
-                        
-                        }
-                        
-                        </td>
-<td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
-    <div class="flex gap-2 justify-center">
-
-        <button
-            onclick="bukaHalamanEdit('${item.firestoreId}')"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-            📝 Edit
-        </button>
-
-        <button
-            onclick="hapusLaporan('${item.firestoreId}')"
-            class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-            🗑️ Hapus
-        </button>
-
-    </div>
-</td>                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = htmlRows;
-        }
-
-        function bukaHalamanEdit(id) {
-            window.location.href = `index.html?editId=${id}`;
-        }
-async function hapusLaporan(id) {
-
-    const yakin = confirm(
-        "Apakah Anda yakin ingin menghapus laporan ini?"
-    );
-
-    if (!yakin) return;
+    let dataFirebase = [];
 
     try {
+        const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+        console.log("Documents found:", snapshot.size);
 
-await deleteDoc(
-    doc(db, "laporanMeditasi", id)
-);
-
-await renderRiwayat();
-
-alert("✅ Laporan berhasil dihapus!");
-
+        snapshot.forEach((docSnap) => {
+            dataFirebase.push({
+                firestoreId: docSnap.id,
+                ...docSnap.data()
+            });
+        });
     } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "❌ Gagal menghapus laporan."
-        );
+        console.error("Firebase Error:", error);
+        alert("❌ Gagal mengambil data dari Firebase.");
+        return;
     }
-};
+    
+    if (role === 'SukWan' || role === 'Titin') {
+        statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
+        keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
+        adminFilterBox.classList.remove('hidden');
+    } else {
+        statusRole.innerText = "Mode: Pengguna Umum";
+        keteranganAkses.innerText ="Ketik nama pada kotak pencarian untuk melihat riwayat meditasi.";
+        adminFilterBox.classList.remove('hidden');
+        const label = adminFilterBox.querySelector('label');
+        if (label) label.innerText = "Masukkan Nama Anda:";
+    }
+
+    let dataTampil = [];
+
+    if (role === 'SukWan' || role === 'Titin') {
+        dataTampil = searchNama
+        ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama))
+        : dataFirebase;
+    } else {
+        if (searchNama === '') {
+            tbody.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            emptyText.innerText = "Silakan ketik nama pada kotak pencarian.";
+            return;
+        }
+        dataTampil = dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama));
+    }                
+  
+    dataTampil.sort((a, b) => {
+        const dateA = a.tanggal || '';
+        const dateB = b.tanggal || '';
+        return dateB.localeCompare(dateA); 
+    });
+
+    if (dataTampil.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyText.innerText = "Tidak ada laporan meditasi yang ditemukan.";
+        return;
+    }
+
+    emptyState.classList.add('hidden');
+
+    let htmlRows = '';
+    dataTampil.forEach(item => {
+        const isIkut = item.ikut_sesi === 'Ya' || item.ikut_sesi === 'Yes';
+        const badgeSesi = isIkut
+            ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-medium">Ya</span>`
+            : `<span class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-xs font-medium">Tidak</span>`;
+
+        htmlRows += `
+            <tr class="hover:bg-slate-50/80 transition-colors">
+                <td class="p-3 font-medium text-slate-900 whitespace-nowrap">${item.tanggal || '-'}</td>
+                <td class="p-3 font-semibold text-slate-800 whitespace-nowrap">${item.nama || 'Tanpa Nama'}</td>
+                <td class="p-3 text-center">${badgeSesi}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.durasi_jalan || '-'}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.durasi_duduk || '-'}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.frekuensi_wandering || '-'}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.kembali_cepat || '-'}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.durasi_hold || '-'}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.durasi_halus || '-'}</td>
+                <td class="p-3 text-xs whitespace-pre-line">${item.muncul_cahaya || '-'}</td>
+                <td class="p-3 text-xs italic text-slate-500 whitespace-pre-line">"${item.pengalaman || '-'}"</td>
+                <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
+                <td class="p-3 bg-emerald-50/30 border-l border-emerald-100">
+                ${(role === "SukWan" || role === "Titin") ? `
+                    <textarea id="pr-${item.firestoreId}" class="w-full border rounded p-2 text-xs" rows="3">${item.pr_individu || ""}</textarea>
+                    <button onclick="simpanPR('${item.firestoreId}')" class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded cursor-pointer">💾 Simpan</button>
+                ` : `
+                    <div class="text-xs whitespace-pre-line font-medium">${item.pr_individu || "Belum ada PR."}</div>
+                `}
+                </td>
+                <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="bukaHalamanEdit('${item.firestoreId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">📝 Edit</button>
+                        <button onclick="hapusLaporan('${item.firestoreId}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">🗑️ Hapus</button>
+                        <button onclick="applyPRUntil('${item.firestoreId}','${item.nama}','${item.tanggal}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-1 rounded-lg cursor-pointer">📅 PR</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = htmlRows;
+}
+
+function bukaHalamanEdit(id) {
+    window.location.href = `index.html?editId=${id}`;
+}
+
+async function hapusLaporan(id) {
+    if (!confirm("Apakah Anda yakin ingin menghapus laporan ini?")) return;
+    try {
+        await deleteDoc(doc(db, "laporanMeditasi", id));
+        await renderRiwayat();
+        alert("✅ Laporan berhasil dihapus!");
+    } catch (error) {
+        console.error(error);
+        alert("❌ Gagal menghapus laporan.");
+    }
+}
 
 async function simpanPR(firestoreId){
-
     const isi = document.getElementById(`pr-${firestoreId}`).value;
-
     try{
-
-        await updateDoc(
-            doc(db,"laporanMeditasi",firestoreId),
-            {
-                pr_individu: isi
-            }
-        );
-
+        await updateDoc(doc(db, "laporanMeditasi", firestoreId), { pr_individu: isi });
         alert("✅ PR berhasil disimpan.");
-
     }catch(err){
-
         console.error(err);
-
         alert("❌ Gagal menyimpan PR.");
-
     }
-
 }
+
 window.addEventListener('DOMContentLoaded', renderRiwayat);
 
 window.renderRiwayat = renderRiwayat;
@@ -390,6 +330,7 @@ window.bukaHalamanEdit = bukaHalamanEdit;
 window.hapusLaporan = hapusLaporan;
 window.simpanPR = simpanPR;
 window.applyPRUntil = applyPRUntil;
-    </script>
+window.cleanupPlaceholderRange = cleanupPlaceholderRange;
+</script>
 </body>
 </html>
