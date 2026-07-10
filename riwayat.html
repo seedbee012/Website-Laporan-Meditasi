@@ -33,8 +33,8 @@
                 <div class="mb-4">
                     <button
                         onclick="cleanupPlaceholderRange()"
-                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer">
-                        🧹 Cleanup Placeholder Data
+                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm text-sm">
+                        🧹 Hapus Hanya Data Kosong (Placeholder)
                     </button>
                 </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -109,7 +109,7 @@ function normalizeText(v) {
     return (v || '').toString().toLowerCase().trim();
 }
 
-// 1. FUNGSI APPLY PR (Berdiri Sendiri)
+// 1. Fungsi Menerapkan PR ke Rentang Tanggal
 async function applyPRUntil(firestoreId, nama, tanggalMulai){
     const sampaiTanggal = prompt("Apply PR until (YYYY-MM-DD)");
     if(!sampaiTanggal) return;
@@ -136,15 +136,15 @@ async function applyPRUntil(firestoreId, nama, tanggalMulai){
     renderRiwayat();
 }
 
-// 2. FUNGSI CLEANUP (Sudah Dipisah Keluar & Mandiri)
+// 2. Fungsi Hapus Massal Khusus yang Kosong (Sesuai Permintaan Anda)
 async function cleanupPlaceholderRange(){
-    const mulai = prompt("Delete placeholder FROM date (YYYY-MM-DD)\nContoh: 2026-07-10");
+    const mulai = prompt("Hapus data kosong dari tanggal (YYYY-MM-DD)\nContoh: 2026-07-11");
     if(!mulai) return;
 
-    const selesai = prompt("Delete placeholder UNTIL date (YYYY-MM-DD)\nContoh: 2026-08-31");
+    const selesai = prompt("Hapus data kosong sampai tanggal (YYYY-MM-DD)\nContoh: 2026-08-31");
     if(!selesai) return;
 
-    if(!confirm(`Hapus data hantu/placeholder dari tanggal:\n${mulai} s/d ${selesai}?\n\nHanya data kosong yang akan dihapus.`)) return;
+    if(!confirm(`Apakah Anda yakin ingin menghapus HANYA data kosong dari tanggal:\n${mulai} s/d ${selesai}?\n\nData asli murid yang sudah diisi TIDAK akan ikut terhapus.`)) return;
 
     try {
         const snapshot = await getDocs(collection(db, "laporanMeditasi"));
@@ -153,6 +153,7 @@ async function cleanupPlaceholderRange(){
         for(const laporan of snapshot.docs){
             const data = laporan.data();
 
+            // Pengecekan kondisi: Semua field utama bernilai kosong atau strip (-)
             const placeholder =
                 (data.durasi_jalan==="-" || !data.durasi_jalan) &&
                 (data.durasi_duduk==="-" || !data.durasi_duduk) &&
@@ -164,9 +165,10 @@ async function cleanupPlaceholderRange(){
                 (data.pengalaman==="-" || !data.pengalaman) &&
                 (data.review_sharing==="-" || !data.review_sharing);
 
+            // Eksekusi jika masuk dalam range tanggal DAN datanya memang kosong
             if(
-                data.tanggal>=mulai &&
-                data.tanggal<=selesai &&
+                data.tanggal >= mulai && 
+                data.tanggal <= selesai && 
                 placeholder
             ){
                 await deleteDoc(doc(db, "laporanMeditasi", laporan.id));
@@ -174,14 +176,15 @@ async function cleanupPlaceholderRange(){
             }
         }
 
-        alert(`✅ Berhasil menghapus ${deleted} data placeholder!`);
+        alert(`🧹 Selesai! Berhasil menghapus ${deleted} data kosong/placeholder.`);
         renderRiwayat();
     } catch (err) {
         console.error(err);
-        alert("❌ Terjadi kesalahan saat menghapus data.");
+        alert("❌ Terjadi kesalahan saat menyapu data kosong.");
     }
 }
 
+// 3. Fungsi Render Tabel Utama
 async function renderRiwayat() {
     const role = getRole();
     const tbody = document.getElementById('tbody-riwayat');
@@ -238,6 +241,7 @@ async function renderRiwayat() {
         dataTampil = dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama));
     }                
   
+    // Diurutkan berdasarkan tanggal terbaru di atas
     dataTampil.sort((a, b) => {
         const dateA = a.tanggal || '';
         const dateB = b.tanggal || '';
@@ -296,6 +300,7 @@ async function renderRiwayat() {
     tbody.innerHTML = htmlRows;
 }
 
+// Fungsi pembantu tambahan
 function bukaHalamanEdit(id) {
     window.location.href = `index.html?editId=${id}`;
 }
