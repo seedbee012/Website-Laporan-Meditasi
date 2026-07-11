@@ -8,14 +8,19 @@
     <style>
         body { background-color: #f8fafc; }
 
+        /* Jika dari form bernilai "Yes" -> Kotak menjadi biru cerah */
         .select-yes {
             background-color: #06b6d4 !important;
             color: #ffffff !important;
             font-weight: bold;
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: inline-block;
         }
+        
+        /* Jika "No" atau kosong -> Tetap polos sewajarnya teks tabel biasa */
         .select-no {
-            background-color: #f0f2f5 !important;
-            color: #4B5563 !important;
+            color: #94a3b8 !important;
         }
         
         .sticky-col {
@@ -47,14 +52,11 @@
             <a href="index.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
                 ← Kembali ke Halaman Utama
             </a>
-            <button onclick="saveMatrixChanges()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer">
-                💾 Simpan Semua Perubahan Absensi
-            </button>
         </div>
 
         <div class="mb-6">
             <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">📋 Tabel Kontrol Absensi (1 Juli - 31 Agustus)</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">Geser tabel ke kanan untuk melihat tanggal berikutnya. Klik dropdown untuk mengubah status Yes/No.</p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Geser tabel ke kanan untuk melihat tanggal berikutnya.</p>
         </div>
 
         <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-xs custom-scrollbar">
@@ -67,38 +69,12 @@
         </div>
     </div>
 
-    <div id="toast" class="hidden fixed bottom-5 right-5 bg-slate-950 text-white px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium z-50 transition-all">
-        ✅ Perubahan absensi berhasil disimpan ke sistem!
-    </div>
-
 <script type="module">
     import {
         db,
         collection,
-        getDocs,
-        addDoc,
-        updateDoc,
-        doc
+        getDocs
     } from "./firebase.js";
-
-    // Jalankan migrasi sekali saja jika masih ada data lama di localStorage murid
-    (function migrasiDataOtomatis() {
-        const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
-        const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
-        const dbLama2 = JSON.parse(localStorage.getItem('meditasi_entries')) || [];
-
-        if (dbLama1.length > 0 || dbLama2.length > 0) {
-            const mapGabung = new Map();
-            dbLama1.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-            dbLama2.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-            dbUtama.forEach(item => { if (item.id) mapGabung.set(item.id, item); });
-
-            const hasilGabungan = Array.from(mapGabung.values());
-            localStorage.setItem('meditasi_db', JSON.stringify(hasilGabungan));
-            localStorage.removeItem('jurnalMeditasiDB');
-            localStorage.removeItem('meditasi_entries');
-        }
-    })();
 
     const masterMurid = [
         "Suk Wan", "Ahin", "Heri Sg", "Uyong", "Yuliana", "Leonardi", "Limey",
@@ -106,10 +82,8 @@
         "Ani", "Santi", "Jessica", "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
         "Yanti", "Ria", "Enje", "Diana", "Trisna Young", "Herman S", "Suryani"
     ];
-    const role = localStorage.getItem("currentUserRole") || "User";
-    localStorage.setItem('murid_master', JSON.stringify(masterMurid));
 
-    // Generate list tanggal untuk bulan Juli dan Agustus 2026
+    // Generate list tanggal untuk bulan Juli 2026
     const tanggalList = [];
     for (let i = 1; i <= 31; i++) {
         let day = i < 10 ? '0' + i : i;
@@ -120,7 +94,6 @@
         return (v || '').toString().toLowerCase().trim();
     }
 
-    // Normalisasi untuk mengambil format YYYY-MM-DD
     function normalizeDate(v) {
         if (!v) return '';
         return v.toString().slice(0, 10);
@@ -130,7 +103,7 @@
         return value === "Yes" || value === "Ya";
     }
 
-    // 1. RENDER MATRIX (Murni ambil data dari Firebase)
+    // RENDER MATRIX (Murni membaca data dari form Firebase)
     async function renderMatrix() {
         let dataFirebase = [];
         try {
@@ -148,7 +121,7 @@
         const headerRow = document.getElementById('table-headers');
         const tbody = document.getElementById('table-matrix-rows');
 
-        // Render Headers Tanggal (Sudah diubah menjadi "Nama" di paling kiri)
+        // Render Headers Tanggal
         let headerHTML = `<th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama</th>`;
         tanggalList.forEach(tgl => {
             const d = new Date(tgl);
@@ -176,38 +149,22 @@
                     status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
                 }
 
-                const selectClass = status === "Yes" ? "select-yes" : "select-no";
-
-                // Jika rolenya admin (SukWan / Titin), tampilkan Dropdown Interaktif
-                if (role === "SukWan" || role === "Titin") {
-                    rowHTML += `
-                    <td class="px-1.5 py-1.5 text-center border-r border-slate-100">
-                        <select
-                            data-nama="${nama}"
-                            data-tanggal="${tgl}"
-                            onchange="updateColors(this); updateTotalHadir();"
-                            class="w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all ${selectClass}">
-                            <option value="Yes" ${status==="Yes"?"selected":""}>Yes</option>
-                            <option value="No" ${status==="No"?"selected":""}>No</option>
-                        </select>
-                    </td>`;
-                } else {
-                    // Jika user biasa, hanya tampilkan badge text
-                    rowHTML += `
-                    <td class="px-3 py-2 text-center border-r border-slate-100">
-                        ${status === "Yes" 
-                            ? `<span class="bg-cyan-500 text-white px-2 py-1 rounded text-xs font-bold">Yes</span>`
-                            : `<span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">No</span>`
-                        }
-                    </td>`;
-                }
+                // Jika "Yes" maka dibungkus class style biru (.select-yes). 
+                // Jika "No" atau kosong (belum isi form) maka tetap polos teks biasa (.select-no).
+                rowHTML += `
+                <td class="px-3 py-2 text-center border-r border-slate-100">
+                    ${status === "Yes" 
+                        ? `<span class="select-yes text-xs">Yes</span>`
+                        : `<span class="select-no text-xs">No</span>`
+                    }
+                </td>`;
             });
 
             tr.innerHTML = rowHTML;
             tbody.appendChild(tr);
         });
 
-        // RENDER TOTAL HADIR DI PALING BAWAH
+        // TOTAL HADIR DI PALING BAWAH
         const totalRow = document.createElement("tr");
         totalRow.className = "bg-indigo-100 font-bold text-indigo-700";
 
@@ -238,102 +195,7 @@
         tbody.appendChild(totalRow);
     }
 
-    // 2. UPDATE WARNA DROPDOWN SAAT DI-KLIK (Lokal di UI)
-    function updateColors(element) {
-        if (element.value === "Yes") {
-            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-transparent outline-none cursor-pointer font-semibold transition-all select-yes";
-        } else {
-            element.className = "w-full text-center rounded px-1 py-1 text-xs border border-slate-200 outline-none cursor-pointer font-semibold transition-all select-no";
-        }
-    }
-
-    // 3. UPDATE TOTAL HADIR SECARA REALTIME SAAT DROPDOWN DIGANTI (Membaca dari layar)
-    function updateTotalHadir() {
-        const totalRow = document.querySelector("tr.bg-indigo-100");
-        if (!totalRow) return;
-
-        const totalCells = totalRow.querySelectorAll("td");
-        
-        tanggalList.forEach((tgl, index) => {
-            let totalYes = 0;
-            masterMurid.forEach(nama => {
-                const dropdown = document.querySelector(`select[data-nama="${nama}"][data-tanggal="${tgl}"]`);
-                if (dropdown && dropdown.value === "Yes") {
-                    totalYes++;
-                }
-            });
-
-            if (totalCells[index + 1]) {
-                totalCells[index + 1].innerText = totalYes;
-            }
-        });
-    }
-
-    // 4. SIMPAN PERUBAHAN MANUAL LANGSUNG KE FIREBASE
-    async function saveMatrixChanges() {
-        const dropdowns = document.querySelectorAll('select[data-nama]');
-        console.log("Sedang menyimpan absensi manual ke Firebase...");
-
-        try {
-            // Ambil data terbaru dari Firebase dulu untuk pencocokan ID dokumen
-            const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-            const dataFirebase = [];
-            snapshot.forEach((docSnap) => {
-                dataFirebase.push({
-                    firestoreId: docSnap.id,
-                    ...docSnap.data()
-                });
-            });
-
-            // Loop semua dropdown di layar untuk dimasukkan/diupdate ke Firebase
-            for (const select of dropdowns) {
-                const nama = select.getAttribute('data-nama');
-                const tgl = select.getAttribute('data-tanggal');
-                const nilai = select.value; 
-
-                // Cari apakah kombinasi nama & tanggal sudah ada di Firestore
-                const dataSama = dataFirebase.find(item =>
-                    normalizeDate(item.tanggal) === tgl &&
-                    normalizeText(item.nama) === normalizeText(nama)
-                );
-
-                if (dataSama) {
-                    // JIKA SUDAH ADA: Update statusnya di Firebase kalau ada perubahan nilai
-                    if (dataSama.ikut_sesi !== nilai) {
-                        const docRef = doc(db, "laporanMeditasi", dataSama.firestoreId);
-                        await updateDoc(docRef, { ikut_sesi: nilai });
-                    }
-                } else {
-                    // JIKA BELUM ADA: Buat dokumen baru langsung di Firebase
-                    await addDoc(collection(db, "laporanMeditasi"), {
-                        nama: nama,
-                        tanggal: tgl,
-                        ikut_sesi: nilai
-                    });
-                }
-            }
-
-            // Munculkan toast penanda sukses
-            const toast = document.getElementById('toast');
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-            
-            // Render ulang matrix murni dari data Firebase yang paling baru
-            await renderMatrix();
-
-        } catch (error) {
-            console.error("Gagal menyimpan ke Firebase:", error);
-            alert("Gagal menyimpan data, periksa koneksi internet.");
-        }
-    }
-
-    // Panggil fungsi render utama saat halaman dimuat
     renderMatrix();
-
-    // Daftarkan fungsi ke window objek agar bisa dipanggil oleh atribut onchange html inline
-    window.updateColors = updateColors;
-    window.updateTotalHadir = updateTotalHadir;
-    window.saveMatrixChanges = saveMatrixChanges;
 </script>
 </body>
 </html>
