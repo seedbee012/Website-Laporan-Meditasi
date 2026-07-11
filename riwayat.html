@@ -29,14 +29,25 @@
                 <p id="keterangan-akses" class="text-sm text-slate-500 mt-1">Memuat hak akses data...</p>
             </div>
             
-            <div id="admin-filter-box" class="hidden p-3 bg-slate-50 rounded-xl border border-slate-200 w-full sm:w-auto">
-                <div class="mb-4">
+            <div id="admin-filter-box" class="hidden p-4 bg-slate-50 rounded-xl border border-slate-200 w-full lg:w-auto flex flex-col gap-4">
+                <!-- PANEL HAPUS DATA KOSONG BERDASARKAN RENTANG TANGGAL -->
+                <div class="flex flex-wrap items-end gap-3 border-b border-slate-200 pb-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dari Tanggal:</label>
+                        <input type="date" id="hapus-mulai" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sampai Tanggal:</label>
+                        <input type="date" id="hapus-selesai" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500">
+                    </div>
                     <button
                         onclick="cleanupPlaceholderRange()"
-                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm text-sm">
-                        🧹 Hapus Hanya Data Kosong (Placeholder)
+                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm text-sm h-[38px]">
+                        🧹 Sapu Data Kosong
                     </button>
                 </div>
+                
+                <!-- FILTER PENCARIAN NAMA -->
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                     <label class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
                     <input type="text" id="search-nama" oninput="renderRiwayat()" placeholder="Cari nama..." class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 w-full sm:w-60">
@@ -109,6 +120,12 @@ function normalizeText(v) {
     return (v || '').toString().toLowerCase().trim();
 }
 
+function isFieldEmpty(value) {
+    if (value === null || value === undefined) return true;
+    const str = value.toString().trim();
+    return str === '' || str === '-';
+}
+
 // 1. Fungsi Menerapkan PR ke Rentang Tanggal
 async function applyPRUntil(firestoreId, nama, tanggalMulai){
     const sampaiTanggal = prompt("Apply PR until (YYYY-MM-DD)");
@@ -117,34 +134,40 @@ async function applyPRUntil(firestoreId, nama, tanggalMulai){
     const prBaru = prompt("Enter the PR");
     if(prBaru===null) return;
 
-    const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-
-    for(const laporan of snapshot.docs){
-        const data = laporan.data();
-        if(
-            data.nama===nama &&
-            data.tanggal>=tanggalMulai &&
-            data.tanggal<=sampaiTanggal
-        ){
-            await updateDoc(
-                doc(db, "laporanMeditasi", laporan.id),
-                { pr_individu: prBaru }
-            );
+    try {
+        const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+        for(const laporan of snapshot.docs){
+            const data = laporan.data();
+            if(
+                data.nama===nama &&
+                data.tanggal>=tanggalMulai &&
+                data.tanggal<=sampaiTanggal
+            ){
+                await updateDoc(
+                    doc(db, "laporanMeditasi", laporan.id),
+                    { pr_individu: prBaru }
+                );
+            }
         }
+        alert("✅ PR applied!");
+        renderRiwayat();
+    } catch (err) {
+        console.error(err);
+        alert("❌ Gagal menerapkan PR massal.");
     }
-    alert("✅ PR applied!");
-    renderRiwayat();
 }
 
-// 2. Fungsi Hapus Massal Khusus yang Kosong (Sesuai Permintaan Anda)
+// 2. Fungsi Hapus Massal Data Kosong Berdasarkan Input Form Tanggal
 async function cleanupPlaceholderRange(){
-    const mulai = prompt("Hapus data kosong dari tanggal (YYYY-MM-DD)\nContoh: 2026-07-11");
-    if(!mulai) return;
+    const mulai = document.getElementById('hapus-mulai').value;
+    const selesai = document.getElementById('hapus-selesai').value;
 
-    const selesai = prompt("Hapus data kosong sampai tanggal (YYYY-MM-DD)\nContoh: 2026-08-31");
-    if(!selesai) return;
+    if(!mulai || !selesai) {
+        alert("⚠️ Mohon pilih Tanggal Mulai dan Tanggal Selesai terlebih dahulu!");
+        return;
+    }
 
-    if(!confirm(`Apakah Anda yakin ingin menghapus HANYA data kosong dari tanggal:\n${mulai} s/d ${selesai}?\n\nData asli murid yang sudah diisi TIDAK akan ikut terhapus.`)) return;
+    if(!confirm(`Apakah Anda yakin ingin menghapus HANYA data kosong dari rentang tanggal:\n${mulai} s/d ${selesai}?\n\nData asli murid yang sudah terisi TIDAK akan ikut terhapus.`)) return;
 
     try {
         const snapshot = await getDocs(collection(db, "laporanMeditasi"));
@@ -153,19 +176,19 @@ async function cleanupPlaceholderRange(){
         for(const laporan of snapshot.docs){
             const data = laporan.data();
 
-            // Pengecekan kondisi: Semua field utama bernilai kosong atau strip (-)
+            // Pengecekan kondisi kekosongan data
             const placeholder =
-                (data.durasi_jalan==="-" || !data.durasi_jalan) &&
-                (data.durasi_duduk==="-" || !data.durasi_duduk) &&
-                (data.frekuensi_wandering==="-" || !data.frekuensi_wandering) &&
-                (data.kembali_cepat==="-" || !data.kembali_cepat) &&
-                (data.durasi_hold==="-" || !data.durasi_hold) &&
-                (data.durasi_halus==="-" || !data.durasi_halus) &&
-                (data.muncul_cahaya==="-" || !data.muncul_cahaya) &&
-                (data.pengalaman==="-" || !data.pengalaman) &&
-                (data.review_sharing==="-" || !data.review_sharing);
+                isFieldEmpty(data.durasi_jalan) &&
+                isFieldEmpty(data.durasi_duduk) &&
+                isFieldEmpty(data.frekuensi_wandering) &&
+                isFieldEmpty(data.kembali_cepat) &&
+                isFieldEmpty(data.durasi_hold) &&
+                isFieldEmpty(data.durasi_halus) &&
+                isFieldEmpty(data.muncul_cahaya) &&
+                isFieldEmpty(data.pengalaman) &&
+                isFieldEmpty(data.review_sharing);
 
-            // Eksekusi jika masuk dalam range tanggal DAN datanya memang kosong
+            // Eksekusi jika berada di dalam lingkup rentang tanggal & data kosong
             if(
                 data.tanggal >= mulai && 
                 data.tanggal <= selesai && 
@@ -199,8 +222,6 @@ async function renderRiwayat() {
 
     try {
         const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-        console.log("Documents found:", snapshot.size);
-
         snapshot.forEach((docSnap) => {
             dataFirebase.push({
                 firestoreId: docSnap.id,
@@ -223,6 +244,9 @@ async function renderRiwayat() {
         adminFilterBox.classList.remove('hidden');
         const label = adminFilterBox.querySelector('label');
         if (label) label.innerText = "Masukkan Nama Anda:";
+        // Sembunyikan form tanggal hapus khusus user biasa demi keamanan
+        const FormHapus = adminFilterBox.firstElementChild;
+        if(FormHapus) FormHapus.classList.add('hidden');
     }
 
     let dataTampil = [];
@@ -241,7 +265,6 @@ async function renderRiwayat() {
         dataTampil = dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama));
     }                
   
-    // Diurutkan berdasarkan tanggal terbaru di atas
     dataTampil.sort((a, b) => {
         const dateA = a.tanggal || '';
         const dateB = b.tanggal || '';
@@ -280,8 +303,8 @@ async function renderRiwayat() {
                 <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
                 <td class="p-3 bg-emerald-50/30 border-l border-emerald-100">
                 ${(role === "SukWan" || role === "Titin") ? `
-                    <textarea id="pr-${item.firestoreId}" class="w-full border rounded p-2 text-xs" rows="3">${item.pr_individu || ""}</textarea>
-                    <button onclick="simpanPR('${item.firestoreId}')" class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded cursor-pointer">💾 Simpan</button>
+                    <textarea id="pr-${item.firestoreId}" class="w-full border rounded p-2 text-xs bg-white" rows="3">${item.pr_individu || ""}</textarea>
+                    <button onclick="simpanPR('${item.firestoreId}')" class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors">💾 Simpan</button>
                 ` : `
                     <div class="text-xs whitespace-pre-line font-medium">${item.pr_individu || "Belum ada PR."}</div>
                 `}
@@ -290,7 +313,7 @@ async function renderRiwayat() {
                     <div class="flex gap-2 justify-center">
                         <button onclick="bukaHalamanEdit('${item.firestoreId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">📝 Edit</button>
                         <button onclick="hapusLaporan('${item.firestoreId}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">🗑️ Hapus</button>
-                        <button onclick="applyPRUntil('${item.firestoreId}','${item.nama}','${item.tanggal}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-1 rounded-lg cursor-pointer">📅 PR</button>
+                        <button onclick="applyPRUntil('${item.firestoreId}','${item.nama}','${item.tanggal}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors">📅 PR</button>
                     </div>
                 </td>
             </tr>
@@ -300,7 +323,6 @@ async function renderRiwayat() {
     tbody.innerHTML = htmlRows;
 }
 
-// Fungsi pembantu tambahan
 function bukaHalamanEdit(id) {
     window.location.href = `index.html?editId=${id}`;
 }
@@ -309,8 +331,8 @@ async function hapusLaporan(id) {
     if (!confirm("Apakah Anda yakin ingin menghapus laporan ini?")) return;
     try {
         await deleteDoc(doc(db, "laporanMeditasi", id));
-        await renderRiwayat();
         alert("✅ Laporan berhasil dihapus!");
+        await renderRiwayat();
     } catch (error) {
         console.error(error);
         alert("❌ Gagal menghapus laporan.");
@@ -318,7 +340,9 @@ async function hapusLaporan(id) {
 }
 
 async function simpanPR(firestoreId){
-    const isi = document.getElementById(`pr-${firestoreId}`).value;
+    const el = document.getElementById(`pr-${firestoreId}`);
+    if (!el) return;
+    const isi = el.value;
     try{
         await updateDoc(doc(db, "laporanMeditasi", firestoreId), { pr_individu: isi });
         alert("✅ PR berhasil disimpan.");
@@ -328,14 +352,14 @@ async function simpanPR(firestoreId){
     }
 }
 
-window.addEventListener('DOMContentLoaded', renderRiwayat);
-
 window.renderRiwayat = renderRiwayat;
 window.bukaHalamanEdit = bukaHalamanEdit;
 window.hapusLaporan = hapusLaporan;
 window.simpanPR = simpanPR;
 window.applyPRUntil = applyPRUntil;
 window.cleanupPlaceholderRange = cleanupPlaceholderRange;
+
+window.addEventListener('DOMContentLoaded', renderRiwayat);
 </script>
 </body>
 </html>
