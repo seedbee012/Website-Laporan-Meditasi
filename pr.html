@@ -116,16 +116,15 @@
                 const prNumber = index + 1;
                 if (isAdmin) {
                     rowHTML += `
-                    <td class="px-2 py-1.5 border-r border-slate-100">
-                        <input 
-                            type="text" 
-                            data-nama="${nama}" 
-                            data-pr="pr${prNumber}" 
-                            value="${nilai}"
-                            placeholder="..."
-                            class="w-full text-center bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium transition-all">
-                    </td>`;
-                } else {
+                <td class="px-2 py-1.5 border-r border-slate-100">
+                    <textarea 
+                        data-nama="${nama}" 
+                        data-pr="pr${prNumber}" 
+                        placeholder="..."
+                        rows="3"
+                        class="w-full h-20 bg-white border border-slate-200 rounded p-2 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium transition-all resize-y">${nilai}</textarea>
+                </td>
+                     } else {
                     rowHTML += `
                     <td class="px-3 py-3 text-center border-r border-slate-100 text-xs font-medium text-slate-600">
                         ${nilai ? nilai : '<span class="text-slate-300">-</span>'}
