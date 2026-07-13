@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Catatan PR - Meditasi</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { background-color: #f8fafc; }
+        
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: #f8fafc !important;
+            border-right: 2px solid #cbd5e1 !important;
+            z-index: 10;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-8">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-md border border-slate-100 p-4 sm:p-6">
+        
+        <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <a href="index.html" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+                ← Kembali ke Halaman Utama
+            </a>
+        </div>
+
+        <!-- Bagian Judul dan Tombol Aksi Utama -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 border-b border-slate-100 pb-5">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">📚 Tabel Kontrol PR dari Ci Suk Wan</h1>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">Catatan dan perkembangan pengerjaan PR berkala murid.</p>
+            </div>
+            
+            <!-- Tombol Simpan PR yang diletakkan persis di atas tabel -->
+            <button id="btn-simpan-pr" onclick="savePRChanges()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer items-center gap-2">
+                💾 Simpan PR
+            </button>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-200 rounded-xl shadow-xs custom-scrollbar">
+            <table class="w-full text-xs sm:text-sm text-left border-collapse">
+                <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-20">
+                    <tr>
+                        <th class="px-4 py-3.5 bg-slate-100 text-slate-900 font-bold border-b-2 border-slate-300 sticky-col min-w-[160px]">Nama</th>
+                        <th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[120px]">PR 1</th>
+                        <th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[120px]">PR 2</th>
+                        <th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[120px]">PR 3</th>
+                        <th class="px-3 py-3.5 text-center font-semibold border-r border-slate-200 min-w-[120px]">PR 4</th>
+                    </tr>
+                </thead>
+                <tbody id="table-pr-rows" class="divide-y divide-slate-200 bg-white"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Notifikasi Sukses -->
+    <div id="toast-pr" class="hidden fixed bottom-5 right-5 bg-slate-950 text-white px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium z-50 transition-all">
+        ✅ Data Catatan PR berhasil diperbarui!
+    </div>
+
+<script type="module">
+    import {
+        db,
+        collection,
+        getDocs,
+        addDoc,
+        updateDoc,
+        doc
+    } from "./firebase.js";
+
+    const masterMurid = [
+        "Yuliana", "Leonardi", "Limey", "Muliani", "Heri Susanto", "Titin", 
+        "Harvey", "Meini", "Rini", "Johan", "Ani", "Santi", "Jessica", 
+        "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
+        "Yanti", "Ria", "Enje", "Diana", "Herman S", "Suryani"
+    ];
+
+    const role = localStorage.getItem("currentUserRole") || "User";
+    const isAdmin = (role === "SukWan" || role === "Titin");
+
+    function normalizeText(v) {
+        return (v || '').toString().toLowerCase().trim();
+    }
+
+    async function renderPRTable() {
+        let dataPRFirebase = [];
+        try {
+            const snapshot = await getDocs(collection(db, "prSukWan"));
+            snapshot.forEach((docSnap) => {
+                dataPRFirebase.push({
+                    firestoreId: docSnap.id,
+                    ...docSnap.data()
+                });
+            });
+        } catch (err) {
+            console.error("Gagal memuat data PR dari Firebase:", err);
+        }
+
+        const tbody = document.getElementById('table-pr-rows');
+        const btnSimpan = document.getElementById('btn-simpan-pr');
+
+        // Tampilkan tombol simpan di atas tabel hanya jika admin
+        if (isAdmin && btnSimpan) {
+            btnSimpan.classList.remove('hidden');
+            btnSimpan.classList.add('inline-flex');
+        }
+
+        tbody.innerHTML = '';
+        masterMurid.forEach(nama => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/50 transition-colors";
+
+            let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
+
+            const recordPR = dataPRFirebase.find(item => normalizeText(item.nama) === normalizeText(nama));
+            
+            const nilaiPR1 = recordPR ? (recordPR.pr1 || '') : '';
+            const nilaiPR2 = recordPR ? (recordPR.pr2 || '') : '';
+            const nilaiPR3 = recordPR ? (recordPR.pr3 || '') : '';
+            const nilaiPR4 = recordPR ? (recordPR.pr4 || '') : '';
+
+            const listNilai = [nilaiPR1, nilaiPR2, nilaiPR3, nilaiPR4];
+            
+            listNilai.forEach((nilai, index) => {
+                const prNumber = index + 1;
+                if (isAdmin) {
+                    rowHTML += `
+                    <td class="px-2 py-1.5 border-r border-slate-100">
+                        <input 
+                            type="text" 
+                            data-nama="${nama}" 
+                            data-pr="pr${prNumber}" 
+                            value="${nilai}"
+                            placeholder="..."
+                            class="w-full text-center bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none font-medium transition-all">
+                    </td>`;
+                } else {
+                    rowHTML += `
+                    <td class="px-3 py-3 text-center border-r border-slate-100 text-xs font-medium text-slate-600">
+                        ${nilai ? nilai : '<span class="text-slate-300">-</span>'}
+                    </td>`;
+                }
+            });
+
+            tr.innerHTML = rowHTML;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function savePRChanges() {
+        const inputs = document.querySelectorAll('input[data-nama]');
+        console.log("Sedang menyimpan data PR ke Firebase...");
+
+        try {
+            const snapshot = await getDocs(collection(db, "prSukWan"));
+            const dataPRFirebase = [];
+            snapshot.forEach((docSnap) => {
+                dataPRFirebase.push({
+                    firestoreId: docSnap.id,
+                    ...docSnap.data()
+                });
+            });
+
+            const mapDataBaru = new Map();
+            inputs.forEach(input => {
+                const nama = input.getAttribute('data-nama');
+                const fieldPR = input.getAttribute('data-pr');
+                const nilai = input.value.trim();
+
+                if (!mapDataBaru.has(nama)) {
+                    mapDataBaru.set(nama, { nama: nama });
+                }
+                mapDataBaru.get(nama)[fieldPR] = nilai;
+            });
+
+            for (const [nama, payloadBaru] of mapDataBaru.entries()) {
+                const dataSama = dataPRFirebase.find(item => normalizeText(item.nama) === normalizeText(nama));
+
+                if (dataSama) {
+                    if (dataSama.pr1 !== payloadBaru.pr1 || dataSama.pr2 !== payloadBaru.pr2 || dataSama.pr3 !== payloadBaru.pr3 || dataSama.pr4 !== payloadBaru.pr4) {
+                        const docRef = doc(db, "prSukWan", dataSama.firestoreId);
+                        await updateDoc(docRef, {
+                            pr1: payloadBaru.pr1 || '',
+                            pr2: payloadBaru.pr2 || '',
+                            pr3: payloadBaru.pr3 || '',
+                            pr4: payloadBaru.pr4 || ''
+                        });
+                    }
+                } else {
+                    await addDoc(collection(db, "prSukWan"), {
+                        nama: payloadBaru.nama,
+                        pr1: payloadBaru.pr1 || '',
+                        pr2: payloadBaru.pr2 || '',
+                        pr3: payloadBaru.pr3 || '',
+                        pr4: payloadBaru.pr4 || ''
+                    });
+                }
+            }
+
+            const toast = document.getElementById('toast-pr');
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+            
+            await renderPRTable();
+
+        } catch (error) {
+            console.error("Gagal menyimpan PR ke Firebase:", error);
+            alert("Terjadi kesalahan saat menyimpan data. Periksa koneksi internet.");
+        }
+    }
+
+    renderPRTable();
+
+    window.savePRChanges = savePRChanges;
+</script>
+</body>
+</html>
