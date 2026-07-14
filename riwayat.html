@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riwayat Jurnal Meditasi</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Tambahan Pustaka SheetJS untuk export Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
         .table-container::-webkit-scrollbar { height: 6px; }
@@ -47,10 +49,22 @@
                     </button>
                 </div>
                 
-                <!-- FILTER PENCARIAN NAMA -->
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
-                    <input type="text" id="search-nama" oninput="renderRiwayat()" placeholder="Cari nama..." class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 w-full sm:w-60">
+                <!-- FILTER PENCARIAN NAMA & ACTION EXPORT -->
+                <div class="flex flex-wrap items-center gap-4 justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
+                        <input type="text" id="search-nama" oninput="renderRiwayat()" placeholder="Cari nama..." class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 w-full sm:w-60">
+                    </div>
+                    
+                    <!-- Tombol Export Eksternal -->
+                    <div class="flex gap-2 w-full sm:w-auto justify-end">
+                        <button onclick="unduhExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5 shadow-xs">
+                            📥 Unduh Excel
+                        </button>
+                        <button id="btn-gspread" onclick="sinkronGoogleSheets()" class="hidden bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs px-3 py-2 rounded-lg cursor-pointer transition-colors items-center gap-1.5 shadow-xs">
+                            🚀 Sinkron ke Google Sheets
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,6 +109,11 @@ import {
 
 console.log("riwayat.js loaded");
 
+// Ganti URL ini dengan URL Web App Deployment dari Google Apps Script Anda
+const GOOGLE_SCRIPT_URL = "URL_WEB_APP_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI";
+
+let globalDataTampil = []; 
+
 (function migrasiDataOtomatis() {
     const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
     const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
@@ -126,7 +145,6 @@ function isFieldEmpty(value) {
     return str === '' || str === '-';
 }
 
-// 1. Fungsi Menerapkan PR ke Rentang Tanggal
 async function applyPRUntil(firestoreId, nama, tanggalMulai){
     const sampaiTanggal = prompt("Apply PR until (YYYY-MM-DD)");
     if(!sampaiTanggal) return;
@@ -157,7 +175,6 @@ async function applyPRUntil(firestoreId, nama, tanggalMulai){
     }
 }
 
-// 2. Fungsi Hapus Massal Data Kosong Berdasarkan Input Form Tanggal
 async function cleanupPlaceholderRange(){
     const mulai = document.getElementById('hapus-mulai').value;
     const selesai = document.getElementById('hapus-selesai').value;
@@ -176,7 +193,6 @@ async function cleanupPlaceholderRange(){
         for(const laporan of snapshot.docs){
             const data = laporan.data();
 
-            // Pengecekan kondisi kekosongan data
             const placeholder =
                 isFieldEmpty(data.durasi_jalan) &&
                 isFieldEmpty(data.durasi_duduk) &&
@@ -188,7 +204,6 @@ async function cleanupPlaceholderRange(){
                 isFieldEmpty(data.pengalaman) &&
                 isFieldEmpty(data.review_sharing);
 
-            // Eksekusi jika berada di dalam lingkup rentang tanggal & data kosong
             if(
                 data.tanggal >= mulai && 
                 data.tanggal <= selesai && 
@@ -207,7 +222,6 @@ async function cleanupPlaceholderRange(){
     }
 }
 
-// 3. Fungsi Render Tabel Utama
 async function renderRiwayat() {
     const role = getRole();
     const tbody = document.getElementById('tbody-riwayat');
@@ -216,6 +230,7 @@ async function renderRiwayat() {
     const statusRole = document.getElementById('status-role');
     const keteranganAkses = document.getElementById('keterangan-akses');
     const adminFilterBox = document.getElementById('admin-filter-box');
+    const btnGSpread = document.getElementById('btn-gspread');
     const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
 
     let dataFirebase = [];
@@ -238,21 +253,23 @@ async function renderRiwayat() {
         statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
         keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
         adminFilterBox.classList.remove('hidden');
+        if (btnGSpread) {
+            btnGSpread.classList.remove('hidden');
+            btnGSpread.classList.add('inline-flex');
+        }
     } else {
         statusRole.innerText = "Mode: Pengguna Umum";
         keteranganAkses.innerText ="Ketik nama pada kotak pencarian untuk melihat riwayat meditasi.";
         adminFilterBox.classList.remove('hidden');
         const label = adminFilterBox.querySelector('label');
         if (label) label.innerText = "Masukkan Nama Anda:";
-        // Sembunyikan form tanggal hapus khusus user biasa demi keamanan
         const FormHapus = adminFilterBox.firstElementChild;
         if(FormHapus) FormHapus.classList.add('hidden');
+        if (btnGSpread) btnGSpread.classList.add('hidden');
     }
 
-    let dataTampil = [];
-
     if (role === 'SukWan' || role === 'Titin') {
-        dataTampil = searchNama
+        globalDataTampil = searchNama
         ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama))
         : dataFirebase;
     } else {
@@ -260,18 +277,19 @@ async function renderRiwayat() {
             tbody.innerHTML = '';
             emptyState.classList.remove('hidden');
             emptyText.innerText = "Silakan ketik nama pada kotak pencarian.";
+            globalDataTampil = [];
             return;
         }
-        dataTampil = dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama));
+        globalDataTampil = dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama));
     }                
   
-    dataTampil.sort((a, b) => {
+    globalDataTampil.sort((a, b) => {
         const dateA = a.tanggal || '';
         const dateB = b.tanggal || '';
         return dateB.localeCompare(dateA); 
     });
 
-    if (dataTampil.length === 0) {
+    if (globalDataTampil.length === 0) {
         tbody.innerHTML = '';
         emptyState.classList.remove('hidden');
         emptyText.innerText = "Tidak ada laporan meditasi yang ditemukan.";
@@ -281,7 +299,7 @@ async function renderRiwayat() {
     emptyState.classList.add('hidden');
 
     let htmlRows = '';
-    dataTampil.forEach(item => {
+    globalDataTampil.forEach(item => {
         const isIkut = item.ikut_sesi === 'Ya' || item.ikut_sesi === 'Yes';
         const badgeSesi = isIkut
             ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-xs font-medium">Ya</span>`
@@ -323,6 +341,86 @@ async function renderRiwayat() {
     tbody.innerHTML = htmlRows;
 }
 
+// FUNGSI UNDUH EXCEL (.xlsx)
+function unduhExcel() {
+    if (globalDataTampil.length === 0) {
+        alert("⚠️ Tidak ada data untuk diekspor!");
+        return;
+    }
+
+    // Pemetaan data mentah Firebase ke format baris tabel Excel terstruktur
+    const dataFormatted = globalDataTampil.map(item => ({
+        "Tanggal": item.tanggal || "-",
+        "Nama": item.nama || "-",
+        "Ikut Sesi": item.ikut_sesi || "-",
+        "Meditasi Jalan": item.durasi_jalan || "-",
+        "Meditasi Duduk": item.durasi_duduk || "-",
+        "Wandering Mind": item.frekuensi_wandering || "-",
+        "Cepat Dapat Konsentrasi": item.kembali_cepat || "-",
+        "Fokus Pegang Nafas": item.durasi_hold || "-",
+        "Nafas Halus": item.durasi_halus || "-",
+        "Muncul Cahaya": item.muncul_cahaya || "-",
+        "Pengalaman Batin": item.pengalaman || "-",
+        "Review Sesi Sharing": item.review_sharing || "-",
+        "PR / Target Individu": item.pr_individu || "-"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataFormatted);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Jurnal Meditasi");
+    
+    // Auto-fit kolom agar rapi saat dibuka di Microsoft Excel
+    const maxCols = Object.keys(dataFormatted[0]).map(key => ({ wch: Math.max(key.length + 2, 15) }));
+    worksheet['!cols'] = maxCols;
+
+    XLSX.writeFile(workbook, `Riwayat_Jurnal_Meditasi_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// FUNGSI SINKRONISASI KE GOOGLE SHEETS VIA APPS SCRIPT
+async function sinkronGoogleSheets() {
+    if (GOOGLE_SCRIPT_URL === "URL_WEB_APP_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI") {
+        alert("🛠️ Konfigurasi Belum Selesai!\nSilakan buat Google Apps Script terlebih dahulu dan masukkan URL-nya ke dalam kode.");
+        return;
+    }
+
+    if (globalDataTampil.length === 0) {
+        alert("⚠️ Tidak ada data saat ini untuk disinkronkan.");
+        return;
+    }
+
+    if (!confirm(`Apakah Anda yakin ingin menyinkronkan ${globalDataTampil.length} data saat ini langsung ke Google Sheets?`)) return;
+
+    try {
+        const dataFormatted = globalDataTampil.map(item => ({
+            tanggal: item.tanggal || "-",
+            nama: item.nama || "-",
+            ikut_sesi: item.ikut_sesi || "-",
+            durasi_jalan: item.durasi_jalan || "-",
+            durasi_duduk: item.durasi_duduk || "-",
+            frekuensi_wandering: item.frekuensi_wandering || "-",
+            kembali_cepat: item.kembali_cepat || "-",
+            durasi_hold: item.durasi_hold || "-",
+            durasi_halus: item.durasi_halus || "-",
+            muncul_cahaya: item.muncul_cahaya || "-",
+            pengalaman: item.pengalaman || "-",
+            review_sharing: item.review_sharing || "-",
+            pr_individu: item.pr_individu || "-"
+        }));
+
+        const tanggapan = await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors", // Digunakan menghindari pemblokiran CORS browser eksternal
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dataFormatted)
+        });
+
+        alert("🚀 Sinkronisasi selesai! Mohon cek berkala lembar dokumen Google Spreadsheet Anda.");
+    } catch (err) {
+        console.error(err);
+        alert("❌ Terjadi kesalahan koneksi saat mengirim data ke Google Sheets.");
+    }
+}
+
 function bukaHalamanEdit(id) {
     window.location.href = `index.html?editId=${id}`;
 }
@@ -358,6 +456,8 @@ window.hapusLaporan = hapusLaporan;
 window.simpanPR = simpanPR;
 window.applyPRUntil = applyPRUntil;
 window.cleanupPlaceholderRange = cleanupPlaceholderRange;
+window.unduhExcel = unduhExcel;
+window.sinkronGoogleSheets = sinkronGoogleSheets;
 
 window.addEventListener('DOMContentLoaded', renderRiwayat);
 </script>
