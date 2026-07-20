@@ -74,7 +74,7 @@
     const masterMurid = [
         "Yuliana", "Leonardi", "Limey", "Muliani", "Heri Susanto", "Titin", 
         "Harvey", "Meini", "Rini", "Johan", "Ani", "Santi", "Jessica", 
-        "Herliana", "Yu Ing", "Aji", "Nanda", "Henry",
+        "Herliana", "Yu Ing", "Aji", "Nanda", "Henry", "Margaret",
         "Yanti", "Ria", "Enje", "Diana", "Herman S", "Suryani"
     ];
 
@@ -111,7 +111,10 @@
                 recordPR ? (recordPR.pr1 || '') : '',
                 recordPR ? (recordPR.pr2 || '') : '',
                 recordPR ? (recordPR.pr3 || '') : '',
-                recordPR ? (recordPR.pr4 || '') : ''
+                recordPR ? (recordPR.pr4 || '') : '',
+                recordPR ? (recordPR.pr5 || '') : '',
+                recordPR ? (recordPR.pr6 || '') : ''
+
             ];
             
             listNilai.forEach((nilai, index) => {
@@ -164,7 +167,10 @@
                             pr1: payloadBaru.pr1 || '',
                             pr2: payloadBaru.pr2 || '',
                             pr3: payloadBaru.pr3 || '',
-                            pr4: payloadBaru.pr4 || ''
+                            pr4: payloadBaru.pr4 || '',
+                            pr5: payloadBaru.pr5 || '',
+                            pr6: payloadBaru.pr6 || ''
+
                         });
                     }
                 } else {
@@ -173,7 +179,9 @@
                         pr1: payloadBaru.pr1 || '',
                         pr2: payloadBaru.pr2 || '',
                         pr3: payloadBaru.pr3 || '',
-                        pr4: payloadBaru.pr4 || ''
+                        pr4: payloadBaru.pr4 || '',
+                        pr5: payloadBaru.pr5 || '',
+                        pr6: payloadBaru.pr6 || ''
                     });
                 }
             }
