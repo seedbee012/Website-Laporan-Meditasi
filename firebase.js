@@ -4,6 +4,7 @@ import {
   getFirestore,
   collection,
   addDoc,
+  getDoc, // <-- Tambahkan di sini
   getDocs,
   updateDoc,
   doc,
@@ -31,6 +32,7 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 const auth = getAuth(app);
+
 async function tambahJurnal(data) {
     const ref = await addDoc(collection(db, "laporanMeditasi"), data);
     return ref.id;
@@ -41,6 +43,7 @@ export {
   auth,
   collection,
   addDoc,
+  getDoc, // <-- Tambahkan di sini agar bisa dipakai di index.html
   getDocs,
   updateDoc,
   doc,
