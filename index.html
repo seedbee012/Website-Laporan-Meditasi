@@ -138,6 +138,7 @@
                     <label for="input-review" class="block text-sm font-medium text-indigo-900 mb-1">Review dari Ci Suk Wan saat Sesi Sharing</label>
                     <textarea id="input-review" name="review_sharing" rows="2" placeholder="Tuliskan review/arahan dari Ci Suk Wan yang diberikan saat sesi sharing..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
                 </div>
+            </div>
 
             <div class="pt-2">
                 <button type="submit" id="btn-simpan" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-all cursor-pointer">
@@ -175,6 +176,22 @@
             return localStorage.getItem('currentUserRole') || 'User';
         }
 
+        function buatInputBisaDiisi() {
+            const inputNama = document.getElementById('input-nama');
+            const inputTanggal = document.getElementById('input-tanggal');
+
+            if (inputNama) {
+                inputNama.disabled = false;
+                inputNama.readOnly = false;
+                inputNama.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
+            if (inputTanggal) {
+                inputTanggal.disabled = false;
+                inputTanggal.readOnly = false;
+                inputTanggal.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
+        }
+
         function prosesLogin() {
             const email = document.getElementById('login-email').value.trim().toLowerCase();
             const password = document.getElementById('login-password').value;
@@ -205,6 +222,9 @@
             const userDisplayName = document.getElementById('user-display-name');
             const roleIndicator = document.getElementById('role-indicator');
 
+            // Pastikan Nama & Tanggal selalu bisa diubah
+            buatInputBisaDiisi();
+
             if (role === 'SukWan' || role === 'Titin') {
                 if (loginFormBlock) loginFormBlock.classList.add('hidden');
                 if (loginStatusBlock) {
@@ -217,10 +237,6 @@
             }
 
             document.getElementById('input-review').disabled = false;
-
-            if (role === 'User' || role === 'Titin') {
-                document.getElementById('input-pr').disabled = true;
-            }
 
             const urlParams = new URLSearchParams(window.location.search);
             const editId = urlParams.get('editId');
@@ -263,15 +279,12 @@
                     document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
                     document.getElementById('input-review').value = dataLama.review_sharing || '';
 
-                    // Pengguna Umum (User) sekarang DIPERBOLEHKAN mengedit Nama dan Tanggal
-                    document.getElementById('input-nama').disabled = false;
-                    document.getElementById('input-tanggal').disabled = false;
+                    // Panggil fungsi penegas sekali lagi setelah data termuat
+                    buatInputBisaDiisi();
                 }
             } else {
-                // Menggunakan waktu lokal WIB agar tidak mundur ke hari kemarin di pagi hari
                 document.getElementById('input-tanggal').value = getTodayString();
                 
-                // Isi otomatis nama dari inputan terakhir jika pernah diisi
                 const savedNama = localStorage.getItem('last_user_name');
                 if (savedNama) {
                     document.getElementById('input-nama').value = savedNama;
@@ -284,11 +297,9 @@
 
             const nama = document.getElementById('input-nama').value.trim();
             const tanggal = document.getElementById('input-tanggal').value;
-            const role = getRole();
             const pilihanSesi = document.getElementById('input-sesi').value;
             const statusAbsensi = (pilihanSesi === 'Ya') ? 'Yes' : 'No';
 
-            // Simpan nama pengguna ke browser agar di masa depan otomatis terisi
             if (nama) {
                 localStorage.setItem('last_user_name', nama);
             }
@@ -313,10 +324,6 @@
                     review_sharing: document.getElementById('input-review').value
                 };
                 
-                if (role === "SukWan") {
-                    dataUpdate.pr_individu = document.getElementById("input-pr").value;
-                }
-                
                 try {
                     await updateDoc(docRef, dataUpdate);
                     alert("✅ Perubahan berhasil disimpan!");
@@ -339,7 +346,7 @@
                     durasi_halus: document.getElementById('input-halus').value,
                     muncul_cahaya: document.getElementById('input-cahaya').value,
                     pengalaman: document.getElementById('input-pengalaman').value,
-                    review_sharing: document.getElementById('input-review').value,
+                    review_sharing: document.getElementById('input-review').value
                 };
 
                 try {
