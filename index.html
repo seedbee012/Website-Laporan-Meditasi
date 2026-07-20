@@ -139,12 +139,6 @@
                     <textarea id="input-review" name="review_sharing" rows="2" placeholder="Tuliskan review/arahan dari Ci Suk Wan yang diberikan saat sesi sharing..." class="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm outline-none focus:border-indigo-500"></textarea>
                 </div>
 
-                <div class="bg-emerald-50/40 border border-emerald-100 rounded-xl p-4">
-                    <label for="input-pr" class="block text-sm font-medium text-emerald-900 mb-1">PR/Target Individu (Ci Suk Wan yg Isi)</label>
-                    <textarea id="input-pr" name="pr_individu" rows="2" placeholder="Hanya bisa diisi/diedit oleh Ci Suk Wan..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm outline-none focus:border-emerald-500"></textarea>
-                </div>
-            </div>
-
             <div class="pt-2">
                 <button type="submit" id="btn-simpan" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-all cursor-pointer">
                     Simpan Laporan Meditasi
@@ -155,19 +149,28 @@
 
     <script type="module">
     import {
-    db,
-    auth,
-    collection,
-    addDoc,
-    getDocs,
-    updateDoc,
-    doc,
-    signInWithEmailAndPassword,
-    signInAnonymously,
-    signOut,
-    tambahJurnal
-} from "./firebase.js";
+        db,
+        auth,
+        collection,
+        addDoc,
+        getDocs,
+        updateDoc,
+        doc,
+        signInWithEmailAndPassword,
+        signInAnonymously,
+        signOut,
+        tambahJurnal
+    } from "./firebase.js";
         
+        // Fungsi mendapatkan tanggal hari ini berdasarkan zona waktu lokal (WIB)
+        function getTodayString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         function getRole() {
             return localStorage.getItem('currentUserRole') || 'User';
         }
@@ -227,7 +230,6 @@
                 document.getElementById('btn-simpan').innerText = "Simpan Perubahan 💾";
 
                 const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-                
                 let dataLama = null;
                 
                 snapshot.forEach((docSnap) => {
@@ -241,7 +243,7 @@
 
                 if (dataLama) {
                     document.getElementById('input-nama').value = dataLama.nama || '';
-                    document.getElementById('input-tanggal').value = dataLama.tanggal || '';
+                    document.getElementById('input-tanggal').value = dataLama.tanggal || getTodayString();
 
                     if (dataLama.ikut_sesi === 'Yes') {
                         document.getElementById('input-sesi').value = 'Ya';
@@ -260,19 +262,24 @@
                     document.getElementById('input-cahaya').value = dataLama.muncul_cahaya || '';
                     document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
                     document.getElementById('input-review').value = dataLama.review_sharing || '';
-                    document.getElementById('input-pr').value = dataLama.pr_individu || '';
 
-                    if (role === 'User') {
-                        document.getElementById('input-nama').disabled = true;
-                        document.getElementById('input-tanggal').disabled = true;
-                    }
+                    // Pengguna Umum (User) sekarang DIPERBOLEHKAN mengedit Nama dan Tanggal
+                    document.getElementById('input-nama').disabled = false;
+                    document.getElementById('input-tanggal').disabled = false;
                 }
             } else {
-                document.getElementById('input-tanggal').value = new Date().toISOString().split('T')[0];
+                // Menggunakan waktu lokal WIB agar tidak mundur ke hari kemarin di pagi hari
+                document.getElementById('input-tanggal').value = getTodayString();
+                
+                // Isi otomatis nama dari inputan terakhir jika pernah diisi
+                const savedNama = localStorage.getItem('last_user_name');
+                if (savedNama) {
+                    document.getElementById('input-nama').value = savedNama;
+                }
             }
         });
 
-async function simpanJurnal(event) {
+        async function simpanJurnal(event) {
             event.preventDefault();
 
             const nama = document.getElementById('input-nama').value.trim();
@@ -281,12 +288,19 @@ async function simpanJurnal(event) {
             const pilihanSesi = document.getElementById('input-sesi').value;
             const statusAbsensi = (pilihanSesi === 'Ya') ? 'Yes' : 'No';
 
+            // Simpan nama pengguna ke browser agar di masa depan otomatis terisi
+            if (nama) {
+                localStorage.setItem('last_user_name', nama);
+            }
+
             const urlParams = new URLSearchParams(window.location.search);
             const editId = urlParams.get('editId');
 
             if (editId) {
                 const docRef = doc(db, "laporanMeditasi", editId);
                 const dataUpdate = {
+                    nama: nama,
+                    tanggal: tanggal,
                     ikut_sesi: statusAbsensi,
                     durasi_jalan: document.getElementById('input-jalan').value,
                     durasi_duduk: document.getElementById('input-duduk').value,
@@ -299,23 +313,19 @@ async function simpanJurnal(event) {
                     review_sharing: document.getElementById('input-review').value
                 };
                 
-                if (role !== "User") {
-                    dataUpdate.nama = nama;
-                    dataUpdate.tanggal = tanggal;
-                }
-                
                 if (role === "SukWan") {
                     dataUpdate.pr_individu = document.getElementById("input-pr").value;
                 }
                 
-                await updateDoc(docRef, dataUpdate);
-                
-                alert("✅ Perubahan berhasil disimpan!");
-                window.location.href = "riwayat.html";
-                                    alert("✅ Perubahan Berhasil Disimpan!");
-                                    window.location.href = 'riwayat.html';
+                try {
+                    await updateDoc(docRef, dataUpdate);
+                    alert("✅ Perubahan berhasil disimpan!");
+                    window.location.href = "riwayat.html";
+                } catch (error) {
+                    console.error("Error update:", error);
+                    alert("❌ Gagal memperbarui jurnal.");
                 }
-                else {
+            } else {
                 const jurnalBaru = {
                     id: Date.now(),
                     nama: nama,
@@ -330,26 +340,23 @@ async function simpanJurnal(event) {
                     muncul_cahaya: document.getElementById('input-cahaya').value,
                     pengalaman: document.getElementById('input-pengalaman').value,
                     review_sharing: document.getElementById('input-review').value,
-                    pr_individu: role === 'SukWan' ? document.getElementById('input-pr').value : ""
                 };
 
-try {
-    await tambahJurnal(jurnalBaru);
-
-    alert("✅ Jurnal Berhasil Dikirim!");
-
-    document.getElementById('meditationForm').reset();
-    document.getElementById('input-tanggal').value =
-        new Date().toISOString().split('T')[0];
-
-} catch (error) {
-    console.error(error);
-    alert("❌ Gagal menyimpan jurnal ke Firebase.");
-}            }
+                try {
+                    await tambahJurnal(jurnalBaru);
+                    alert("✅ Jurnal Berhasil Dikirim!");
+                    document.getElementById('meditationForm').reset();
+                    document.getElementById('input-tanggal').value = getTodayString();
+                } catch (error) {
+                    console.error(error);
+                    alert("❌ Gagal menyimpan jurnal ke Firebase.");
+                }
+            }
         }
+
         window.prosesLogin = prosesLogin;
-window.prosesLogout = prosesLogout;
-window.simpanJurnal = simpanJurnal;
+        window.prosesLogout = prosesLogout;
+        window.simpanJurnal = simpanJurnal;
     </script>
 </body>
 </html>
