@@ -153,17 +153,14 @@
         db,
         auth,
         collection,
-        addDoc,
+        getDoc,
         getDocs,
         updateDoc,
         doc,
-        signInWithEmailAndPassword,
-        signInAnonymously,
-        signOut,
         tambahJurnal
     } from "./firebase.js";
         
-        // Fungsi mendapatkan tanggal hari ini berdasarkan zona waktu lokal (WIB)
+        // Fungsi tanggal lokal WIB
         function getTodayString() {
             const today = new Date();
             const year = today.getFullYear();
@@ -183,12 +180,12 @@
             if (inputNama) {
                 inputNama.disabled = false;
                 inputNama.readOnly = false;
-                inputNama.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                inputNama.removeAttribute('disabled');
             }
             if (inputTanggal) {
                 inputTanggal.disabled = false;
                 inputTanggal.readOnly = false;
-                inputTanggal.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                inputTanggal.removeAttribute('disabled');
             }
         }
 
@@ -222,7 +219,7 @@
             const userDisplayName = document.getElementById('user-display-name');
             const roleIndicator = document.getElementById('role-indicator');
 
-            // Pastikan Nama & Tanggal selalu bisa diubah
+            // Pastikan Input Nama & Tanggal selalu terbuka
             buatInputBisaDiisi();
 
             if (role === 'SukWan' || role === 'Titin') {
@@ -245,46 +242,57 @@
                 document.getElementById('form-title').innerText = "Koreksi / Edit Jurnal Meditasi 📝";
                 document.getElementById('btn-simpan').innerText = "Simpan Perubahan 💾";
 
-                const snapshot = await getDocs(collection(db, "laporanMeditasi"));
-                let dataLama = null;
-                
-                snapshot.forEach((docSnap) => {
-                    if (docSnap.id === editId) {
-                        dataLama = {
-                            firestoreId: docSnap.id,
-                            ...docSnap.data()
-                        };
-                    }
-                });
+                try {
+                    // Ambil data langsung menggunakan ID dokumen Firestore
+                    const docRef = doc(db, "laporanMeditasi", editId);
+                    const docSnap = await getDoc(docRef);
 
-                if (dataLama) {
-                    document.getElementById('input-nama').value = dataLama.nama || '';
-                    document.getElementById('input-tanggal').value = dataLama.tanggal || getTodayString();
+                    let dataLama = null;
 
-                    if (dataLama.ikut_sesi === 'Yes') {
-                        document.getElementById('input-sesi').value = 'Ya';
-                    } else if (dataLama.ikut_sesi === 'No') {
-                        document.getElementById('input-sesi').value = 'Tidak';
+                    if (docSnap.exists()) {
+                        dataLama = docSnap.data();
                     } else {
-                        document.getElementById('input-sesi').value = dataLama.ikut_sesi || 'Ya';
+                        // Jika tidak ketemu berdasarkan ID Firestore, coba cari berdasarkan field ID kustom
+                        const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+                        snapshot.forEach((d) => {
+                            const val = d.data();
+                            if (d.id === editId || String(val.id) === String(editId)) {
+                                dataLama = val;
+                            }
+                        });
                     }
 
-                    document.getElementById('input-jalan').value = dataLama.durasi_jalan || '';
-                    document.getElementById('input-duduk').value = dataLama.durasi_duduk || '';
-                    document.getElementById('input-wandering').value = dataLama.frekuensi_wandering || '';
-                    document.getElementById('input-cepat').value = dataLama.kembali_cepat || '';
-                    document.getElementById('input-hold').value = dataLama.durasi_hold || '';
-                    document.getElementById('input-halus').value = dataLama.durasi_halus || '';
-                    document.getElementById('input-cahaya').value = dataLama.muncul_cahaya || '';
-                    document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
-                    document.getElementById('input-review').value = dataLama.review_sharing || '';
+                    if (dataLama) {
+                        document.getElementById('input-nama').value = dataLama.nama || '';
+                        document.getElementById('input-tanggal').value = dataLama.tanggal || getTodayString();
 
-                    // Panggil fungsi penegas sekali lagi setelah data termuat
-                    buatInputBisaDiisi();
+                        if (dataLama.ikut_sesi === 'Yes') {
+                            document.getElementById('input-sesi').value = 'Ya';
+                        } else if (dataLama.ikut_sesi === 'No') {
+                            document.getElementById('input-sesi').value = 'Tidak';
+                        } else {
+                            document.getElementById('input-sesi').value = dataLama.ikut_sesi || 'Ya';
+                        }
+
+                        document.getElementById('input-jalan').value = dataLama.durasi_jalan || '';
+                        document.getElementById('input-duduk').value = dataLama.durasi_duduk || '';
+                        document.getElementById('input-wandering').value = dataLama.frekuensi_wandering || '';
+                        document.getElementById('input-cepat').value = dataLama.kembali_cepat || '';
+                        document.getElementById('input-hold').value = dataLama.durasi_hold || '';
+                        document.getElementById('input-halus').value = dataLama.durasi_halus || '';
+                        document.getElementById('input-cahaya').value = dataLama.muncul_cahaya || '';
+                        document.getElementById('input-pengalaman').value = dataLama.pengalaman || '';
+                        document.getElementById('input-review').value = dataLama.review_sharing || '';
+
+                        buatInputBisaDiisi();
+                    } else {
+                        alert("⚠️ Data lama tidak ditemukan.");
+                    }
+                } catch (err) {
+                    console.error("Gagal mengambil data lama:", err);
                 }
             } else {
                 document.getElementById('input-tanggal').value = getTodayString();
-                
                 const savedNama = localStorage.getItem('last_user_name');
                 if (savedNama) {
                     document.getElementById('input-nama').value = savedNama;
