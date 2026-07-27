@@ -83,7 +83,7 @@
         "Yanti", "Ria", "Enje", "Diana", "Herman S", "Margaret", "Suryani", "Robby", "Melly"
     ];
 
-    // Generate list tanggal untuk bulan Juli 2026
+    // Generate list tanggal untuk bulan Agustus 2026
     const tanggalList = [];
     for (let i = 1; i <= 31; i++) {
         let day = i < 10 ? '0' + i : i;
@@ -103,7 +103,7 @@
         return value === "Yes" || value === "Ya";
     }
 
-    // RENDER MATRIX (Murni membaca data dari form Firebase)
+    // RENDER MATRIX
     async function renderMatrix() {
         let dataFirebase = [];
         try {
@@ -139,22 +139,33 @@
             let rowHTML = `<td class="px-4 py-3 font-bold text-slate-900 sticky-col shadow-xs">${nama}</td>`;
 
             tanggalList.forEach(tgl => {
-                const dataJurnal = dataFirebase.find(item =>
+                // Cari SEMUA laporan murid tersebut pada tanggal terkait
+                const matchingEntries = dataFirebase.filter(item =>
                     normalizeDate(item.tanggal) === tgl &&
-                    normalizeText(item.nama) === normalizeText(nama)
+                    normalizeText(item.nama) === normalizeText(nama) &&
+                    isYesStatus(item.ikut_sesi)
                 );
 
-                let status = "No";
-                if (dataJurnal) {
-                    status = isYesStatus(dataJurnal.ikut_sesi) ? "Yes" : "No";
+                let isYes = matchingEntries.length > 0;
+                let sessionLabel = "";
+
+                if (isYes) {
+                    const hasPagi = matchingEntries.some(item => normalizeText(item.waktu_sesi) === "pagi");
+                    const hasMalam = matchingEntries.some(item => normalizeText(item.waktu_sesi) === "malam");
+
+                    if (hasPagi && hasMalam) {
+                        sessionLabel = " (PM)";
+                    } else if (hasPagi) {
+                        sessionLabel = " (P)";
+                    } else if (hasMalam) {
+                        sessionLabel = " (M)";
+                    }
                 }
 
-                // Jika "Yes" maka dibungkus class style biru (.select-yes). 
-                // Jika "No" atau kosong (belum isi form) maka tetap polos teks biasa (.select-no).
                 rowHTML += `
                 <td class="px-3 py-2 text-center border-r border-slate-100">
-                    ${status === "Yes" 
-                        ? `<span class="select-yes text-xs">Yes</span>`
+                    ${isYes 
+                        ? `<span class="select-yes text-xs">Yes${sessionLabel}</span>`
                         : `<span class="select-no text-xs">No</span>`
                     }
                 </td>`;
@@ -176,11 +187,12 @@
         tanggalList.forEach(tgl => {
             let totalYes = 0;
             masterMurid.forEach(nama => {
-                const dataJurnal = dataFirebase.find(item =>
+                const hasAttended = dataFirebase.some(item =>
                     normalizeDate(item.tanggal) === tgl &&
-                    normalizeText(item.nama) === normalizeText(nama)
+                    normalizeText(item.nama) === normalizeText(nama) &&
+                    isYesStatus(item.ikut_sesi)
                 );
-                if (dataJurnal && isYesStatus(dataJurnal.ikut_sesi)) {
+                if (hasAttended) {
                     totalYes++;
                 }
             });
