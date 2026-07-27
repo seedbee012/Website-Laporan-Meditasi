@@ -73,12 +73,13 @@
 
         <!-- TABEL DATA -->
         <div class="table-container w-full overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
-            <table class="w-full text-left border-collapse text-sm min-w-[1200px]">
+            <table class="w-full text-left border-collapse text-sm min-w-[1350px]">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold text-xs uppercase tracking-wider">
                         <th class="p-3 whitespace-nowrap">Tanggal</th>
                         <th class="p-3 whitespace-nowrap">Nama</th>
                         <th class="p-3 text-center whitespace-nowrap">Ikut Meditasi</th>
+                        <th class="p-3 text-center whitespace-nowrap">Waktu Sesi Meditasi</th>
                         <th class="p-3 min-w-[140px]">Meditasi Jalan</th>
                         <th class="p-3 min-w-[140px]">Meditasi Duduk</th>
                         <th class="p-3 min-w-[140px]">Wandering Mind</th>
@@ -324,6 +325,7 @@ async function renderRiwayat() {
                 <td class="p-3 font-medium text-slate-900 whitespace-nowrap">${item.tanggal || '-'}</td>
                 <td class="p-3 font-semibold text-slate-800 whitespace-nowrap">${item.nama || 'Tanpa Nama'}</td>
                 <td class="p-3 text-center">${badgeSesi}</td>
+                <td class="p-3 text-center text-xs font-medium text-slate-700 whitespace-nowrap">${item.waktu_sesi || '-'}</td>
                 <td class="p-3 text-xs whitespace-pre-line">${item.durasi_jalan || '-'}</td>
                 <td class="p-3 text-xs whitespace-pre-line">${item.durasi_duduk || '-'}</td>
                 <td class="p-3 text-xs whitespace-pre-line">${item.frekuensi_wandering || '-'}</td>
@@ -366,6 +368,7 @@ function unduhExcel() {
         "Tanggal": item.tanggal || "-",
         "Nama": item.nama || "-",
         "Ikut Sesi": item.ikut_sesi || "-",
+        "Waktu Sesi Meditasi": item.waktu_sesi || "-",
         "Meditasi Jalan": item.durasi_jalan || "-",
         "Meditasi Duduk": item.durasi_duduk || "-",
         "Wandering Mind": item.frekuensi_wandering || "-",
@@ -408,6 +411,7 @@ async function sinkronGoogleSheets() {
             tanggal: item.tanggal || "-",
             nama: item.nama || "-",
             ikut_sesi: item.ikut_sesi || "-",
+            waktu_sesi: item.waktu_sesi || "-",
             durasi_jalan: item.durasi_jalan || "-",
             durasi_duduk: item.durasi_duduk || "-",
             frekuensi_wandering: item.frekuensi_wandering || "-",
