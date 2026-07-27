@@ -83,12 +83,19 @@
 
             <hr class="border-slate-100">
 
-            <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Ikut sesi meditasi hari ini?</label>
-                <div class="flex gap-6">
-                    <select id="input-sesi" name="ikut_sesi" required class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm outline-none focus:border-emerald-500">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Ikut sesi meditasi hari ini?</label>
+                    <select id="input-sesi" name="ikut_sesi" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
                         <option value="Ya">Ya</option>
                         <option value="Tidak">Tidak</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Waktu Sesi Meditasi</label>
+                    <select id="input-waktu-sesi" name="waktu_sesi" required class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500">
+                        <option value="Pagi">Pagi</option>
+                        <option value="Malam">Malam</option>
                     </select>
                 </div>
             </div>
@@ -158,7 +165,7 @@
         updateDoc,
         doc,
         tambahJurnal
-    } from "./firebase.js";
+    } from "./firebase.js?v=2";
         
         function getTodayString() {
             const today = new Date();
@@ -270,6 +277,7 @@
                             document.getElementById('input-sesi').value = dataLama.ikut_sesi || 'Ya';
                         }
 
+                        document.getElementById('input-waktu-sesi').value = dataLama.waktu_sesi || 'Pagi';
                         document.getElementById('input-jalan').value = dataLama.durasi_jalan || '';
                         document.getElementById('input-duduk').value = dataLama.durasi_duduk || '';
                         document.getElementById('input-wandering').value = dataLama.frekuensi_wandering || '';
@@ -302,6 +310,7 @@
             const nama = document.getElementById('input-nama').value.trim();
             const tanggal = document.getElementById('input-tanggal').value;
             const pilihanSesi = document.getElementById('input-sesi').value;
+            const waktuSesi = document.getElementById('input-waktu-sesi').value;
             const statusAbsensi = (pilihanSesi === 'Ya') ? 'Yes' : 'No';
 
             if (nama) {
@@ -317,6 +326,7 @@
                     nama: nama,
                     tanggal: tanggal,
                     ikut_sesi: statusAbsensi,
+                    waktu_sesi: waktuSesi,
                     durasi_jalan: document.getElementById('input-jalan').value,
                     durasi_duduk: document.getElementById('input-duduk').value,
                     frekuensi_wandering: document.getElementById('input-wandering').value,
@@ -342,6 +352,7 @@
                     nama: nama,
                     tanggal: tanggal,
                     ikut_sesi: statusAbsensi,
+                    waktu_sesi: waktuSesi,
                     durasi_jalan: document.getElementById('input-jalan').value,
                     durasi_duduk: document.getElementById('input-duduk').value,
                     frekuensi_wandering: document.getElementById('input-wandering').value,
