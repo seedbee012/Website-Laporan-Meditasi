@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riwayat Jurnal Meditasi</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Tambahan Pustaka SheetJS untuk export Excel -->
+    <!-- Pustaka SheetJS untuk Export Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { background-color: #f8fafc; }
@@ -15,8 +15,9 @@
 </head>
 <body class="text-slate-800 antialiased min-h-screen py-6 px-4 sm:py-12 sm:px-6 lg:px-8">
 
+    <!-- NAVIGATION BAR -->
     <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
-        <a href="index.html" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+        <a href="index.html" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1">
             ← Kembali Isi Jurnal
         </a>
         <div id="status-role" class="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200">
@@ -24,6 +25,7 @@
         </div>
     </div>
 
+    <!-- MAIN CONTAINER -->
     <div class="max-w-7xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sm:p-8">
         <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
             <div>
@@ -32,8 +34,8 @@
             </div>
             
             <div id="admin-filter-box" class="hidden p-4 bg-slate-50 rounded-xl border border-slate-200 w-full lg:w-auto flex flex-col gap-4">
-                <!-- PANEL HAPUS DATA KOSONG BERDASARKAN RENTANG TANGGAL -->
-                <div class="flex flex-wrap items-end gap-3 border-b border-slate-200 pb-3">
+                <!-- PANEL HAPUS DATA KOSONG BERDASARKAN RENTANG TANGGAL (KHUSUS ADMIN) -->
+                <div id="panel-hapus-kosong" class="flex flex-wrap items-end gap-3 border-b border-slate-200 pb-3">
                     <div class="flex flex-col gap-1">
                         <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Dari Tanggal:</label>
                         <input type="date" id="hapus-mulai" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500">
@@ -44,7 +46,7 @@
                     </div>
                     <button
                         onclick="cleanupPlaceholderRange()"
-                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-sm text-sm h-[38px]">
+                        class="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2 rounded-lg cursor-pointer transition-colors shadow-xs text-sm h-[38px] flex items-center gap-1.5">
                         🧹 Sapu Data Kosong
                     </button>
                 </div>
@@ -52,7 +54,7 @@
                 <!-- FILTER PENCARIAN NAMA & ACTION EXPORT -->
                 <div class="flex flex-wrap items-center gap-4 justify-between">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                        <label class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
+                        <label id="label-search-nama" for="search-nama" class="text-xs font-bold text-slate-600 uppercase tracking-wider whitespace-nowrap">Filter Nama:</label>
                         <input type="text" id="search-nama" oninput="renderRiwayat()" placeholder="Cari nama..." class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-indigo-500 w-full sm:w-60">
                     </div>
                     
@@ -69,6 +71,7 @@
             </div>
         </div>
 
+        <!-- TABEL DATA -->
         <div class="table-container w-full overflow-x-auto border border-slate-200 rounded-xl shadow-xs">
             <table class="w-full text-left border-collapse text-sm min-w-[1200px]">
                 <thead>
@@ -92,7 +95,9 @@
                 <tbody id="tbody-riwayat" class="divide-y divide-slate-200 text-slate-600"></tbody>
             </table>
         </div>
-        <div id="empty-state" class="hidden text-center py-12 border-2 border-dashed border-slate-200 rounded-b-xl bg-slate-50/30">
+
+        <!-- EMPTY STATE -->
+        <div id="empty-state" class="hidden text-center py-12 border-2 border-dashed border-slate-200 rounded-b-xl bg-slate-50/30 mt-2">
             <p id="empty-text" class="text-sm text-slate-500 font-medium">Tidak ada data untuk ditampilkan.</p>
         </div>
     </div>
@@ -109,11 +114,12 @@ import {
 
 console.log("riwayat.js loaded");
 
-// Ganti URL ini dengan URL Web App Deployment dari Google Apps Script Anda
+// URL Web App Deployment dari Google Apps Script
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwCkf4ovNMHPolHBewAYiBEycXJvFrkHdfmWI3yCBCKBsy7RAYgpVWX6RNTUcqw-co/exec";
 
 let globalDataTampil = []; 
 
+// Migrasi data otomatis dari localStorage
 (function migrasiDataOtomatis() {
     const dbUtama = JSON.parse(localStorage.getItem('meditasi_db')) || [];
     const dbLama1 = JSON.parse(localStorage.getItem('jurnalMeditasiDB')) || [];
@@ -146,29 +152,32 @@ function isFieldEmpty(value) {
 }
 
 async function applyPRUntil(firestoreId, nama, tanggalMulai){
-    const sampaiTanggal = prompt("Apply PR until (YYYY-MM-DD)");
+    const sampaiTanggal = prompt(`Terapkan PR untuk ${nama} mulai ${tanggalMulai} sampai tanggal (YYYY-MM-DD):`);
     if(!sampaiTanggal) return;
 
-    const prBaru = prompt("Enter the PR");
-    if(prBaru===null) return;
+    const prBaru = prompt("Masukkan isi PR/Target Individu baru:");
+    if(prBaru === null) return;
 
     try {
         const snapshot = await getDocs(collection(db, "laporanMeditasi"));
+        let updatedCount = 0;
+
         for(const laporan of snapshot.docs){
             const data = laporan.data();
             if(
-                data.nama===nama &&
-                data.tanggal>=tanggalMulai &&
-                data.tanggal<=sampaiTanggal
+                data.nama === nama &&
+                data.tanggal >= tanggalMulai &&
+                data.tanggal <= sampaiTanggal
             ){
                 await updateDoc(
                     doc(db, "laporanMeditasi", laporan.id),
                     { pr_individu: prBaru }
                 );
+                updatedCount++;
             }
         }
-        alert("✅ PR applied!");
-        renderRiwayat();
+        alert(`✅ PR berhasil diterapkan ke ${updatedCount} laporan!`);
+        await renderRiwayat();
     } catch (err) {
         console.error(err);
         alert("❌ Gagal menerapkan PR massal.");
@@ -215,7 +224,7 @@ async function cleanupPlaceholderRange(){
         }
 
         alert(`🧹 Selesai! Berhasil menghapus ${deleted} data kosong/placeholder.`);
-        renderRiwayat();
+        await renderRiwayat();
     } catch (err) {
         console.error(err);
         alert("❌ Terjadi kesalahan saat menyapu data kosong.");
@@ -230,6 +239,8 @@ async function renderRiwayat() {
     const statusRole = document.getElementById('status-role');
     const keteranganAkses = document.getElementById('keterangan-akses');
     const adminFilterBox = document.getElementById('admin-filter-box');
+    const panelHapusKosong = document.getElementById('panel-hapus-kosong');
+    const labelSearchNama = document.getElementById('label-search-nama');
     const btnGSpread = document.getElementById('btn-gspread');
     const searchNama = document.getElementById('search-nama') ? normalizeText(document.getElementById('search-nama').value) : '';
 
@@ -249,40 +260,43 @@ async function renderRiwayat() {
         return;
     }
     
+    // ATUR TAMPILAN SESUAI HAK AKSES
     if (role === 'SukWan' || role === 'Titin') {
         statusRole.innerText = `Mode Admin: ${role === 'SukWan' ? 'Ci Suk Wan' : 'Ci Titin'}`;
         keteranganAkses.innerText = "Menampilkan semua tabel data laporan masuk dari seluruh murid.";
         adminFilterBox.classList.remove('hidden');
+        if (panelHapusKosong) panelHapusKosong.classList.remove('hidden');
+        if (labelSearchNama) labelSearchNama.innerText = "Filter Nama:";
         if (btnGSpread) {
             btnGSpread.classList.remove('hidden');
             btnGSpread.classList.add('inline-flex');
         }
     } else {
         statusRole.innerText = "Mode: Pengguna Umum";
-        keteranganAkses.innerText ="Ketik nama pada kotak pencarian untuk melihat riwayat meditasi.";
+        keteranganAkses.innerText = "Ketik nama pada kotak pencarian untuk melihat riwayat meditasi.";
         adminFilterBox.classList.remove('hidden');
-        const label = adminFilterBox.querySelector('label');
-        if (label) label.innerText = "Masukkan Nama Anda:";
-        const FormHapus = adminFilterBox.firstElementChild;
-        if(FormHapus) FormHapus.classList.add('hidden');
+        if (panelHapusKosong) panelHapusKosong.classList.add('hidden');
+        if (labelSearchNama) labelSearchNama.innerText = "Masukkan Nama Anda:";
         if (btnGSpread) btnGSpread.classList.add('hidden');
     }
 
+    // FILTER DATA
     if (role === 'SukWan' || role === 'Titin') {
         globalDataTampil = searchNama
-        ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama))
-        : dataFirebase;
+            ? dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama))
+            : dataFirebase;
     } else {
         if (searchNama === '') {
             tbody.innerHTML = '';
             emptyState.classList.remove('hidden');
-            emptyText.innerText = "Silakan ketik nama pada kotak pencarian.";
+            emptyText.innerText = "Silakan ketik nama pada kotak pencarian untuk melihat riwayat.";
             globalDataTampil = [];
             return;
         }
         globalDataTampil = dataFirebase.filter(item => normalizeText(item.nama).includes(searchNama));
-    }                
-  
+    }                   
+    
+    // URUTKAN BERDASARKAN TANGGAL TERBARU
     globalDataTampil.sort((a, b) => {
         const dateA = a.tanggal || '';
         const dateB = b.tanggal || '';
@@ -321,17 +335,17 @@ async function renderRiwayat() {
                 <td class="p-3 text-xs bg-indigo-50/30 text-indigo-950 whitespace-pre-line font-medium border-l border-indigo-100">${item.review_sharing || '-'}</td>
                 <td class="p-3 bg-emerald-50/30 border-l border-emerald-100">
                 ${(role === "SukWan" || role === "Titin") ? `
-                    <textarea id="pr-${item.firestoreId}" class="w-full border rounded p-2 text-xs bg-white" rows="3">${item.pr_individu || ""}</textarea>
-                    <button onclick="simpanPR('${item.firestoreId}')" class="mt-2 bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1 rounded cursor-pointer transition-colors">💾 Simpan</button>
+                    <textarea id="pr-${item.firestoreId}" class="w-full border rounded p-2 text-xs bg-white focus:outline-none focus:border-emerald-500" rows="3">${item.pr_individu || ""}</textarea>
+                    <button onclick="simpanPR('${item.firestoreId}')" class="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded cursor-pointer transition-colors shadow-xs flex items-center gap-1">💾 Simpan</button>
                 ` : `
-                    <div class="text-xs whitespace-pre-line font-medium">${item.pr_individu || "Belum ada PR."}</div>
+                    <div class="text-xs whitespace-pre-line font-medium text-emerald-900">${item.pr_individu || "Belum ada PR."}</div>
                 `}
                 </td>
                 <td class="p-3 text-center sticky right-0 bg-white shadow-[-4px_0_10px_rgba(0,0,0,0.03)] z-10">
-                    <div class="flex gap-2 justify-center">
-                        <button onclick="bukaHalamanEdit('${item.firestoreId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">📝 Edit</button>
-                        <button onclick="hapusLaporan('${item.firestoreId}')" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">🗑️ Hapus</button>
-                        <button onclick="applyPRUntil('${item.firestoreId}','${item.nama}','${item.tanggal}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors">📅 PR</button>
+                    <div class="flex gap-1.5 justify-center">
+                        <button onclick="bukaHalamanEdit('${item.firestoreId}')" title="Edit Data" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer">📝 Edit</button>
+                        <button onclick="hapusLaporan('${item.firestoreId}')" title="Hapus Data" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer">🗑️ Hapus</button>
+                        <button onclick="applyPRUntil('${item.firestoreId}','${item.nama}','${item.tanggal}')" title="Terapkan PR Massal" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-2 py-1.5 rounded-lg cursor-pointer transition-colors">📅 PR</button>
                     </div>
                 </td>
             </tr>
@@ -348,7 +362,6 @@ function unduhExcel() {
         return;
     }
 
-    // Pemetaan data mentah Firebase ke format baris tabel Excel terstruktur
     const dataFormatted = globalDataTampil.map(item => ({
         "Tanggal": item.tanggal || "-",
         "Nama": item.nama || "-",
@@ -378,7 +391,7 @@ function unduhExcel() {
 
 // FUNGSI SINKRONISASI KE GOOGLE SHEETS VIA APPS SCRIPT
 async function sinkronGoogleSheets() {
-    if (GOOGLE_SCRIPT_URL === "URL_WEB_APP_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI") {
+    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("URL_WEB_APP")) {
         alert("🛠️ Konfigurasi Belum Selesai!\nSilakan buat Google Apps Script terlebih dahulu dan masukkan URL-nya ke dalam kode.");
         return;
     }
@@ -407,9 +420,9 @@ async function sinkronGoogleSheets() {
             pr_individu: item.pr_individu || "-"
         }));
 
-        const tanggapan = await fetch(GOOGLE_SCRIPT_URL, {
+        await fetch(GOOGLE_SCRIPT_URL, {
             method: "POST",
-            mode: "no-cors", // Digunakan menghindari pemblokiran CORS browser eksternal
+            mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(dataFormatted)
         });
@@ -450,6 +463,7 @@ async function simpanPR(firestoreId){
     }
 }
 
+// DAFTARKAN FUNGSI KE WINDOW OBJECT (Agar dapat dipanggil dari onclick atribut HTML)
 window.renderRiwayat = renderRiwayat;
 window.bukaHalamanEdit = bukaHalamanEdit;
 window.hapusLaporan = hapusLaporan;
